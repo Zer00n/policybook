@@ -1,0 +1,167 @@
+suite: e3_qa
+version: 1
+fixtures_dir: ../../backend/tests/fixtures/policies
+tasks:
+  - id: e3-01
+    documents: [accident_public_a.pdf]
+    question: 骑电动车摔伤门诊，意外医疗能报吗？
+    gold:
+      verdict: likely_covered
+      required_quotes_any:
+        - "意外伤害医疗保险金"
+        - "在二级以上公立医院门诊或住院治疗的"
+
+  - id: e3-02
+    documents: [accident_public_a.pdf]
+    question: 意外医疗保险金的免赔额是多少？
+    gold:
+      verdict: likely_covered
+      required_quotes_any:
+        - "扣除 100 元免赔额"
+        - "100 元免赔额"
+
+  - id: e3-03
+    documents: [accident_public_a.pdf]
+    question: 如果没有经过医保报销，意外医疗报销比例是多少？
+    gold:
+      verdict: likely_covered
+      required_quotes_any:
+        - "未经社保报销的按 80% 比例给付"
+        - "按 80% 比例给付"
+
+  - id: e3-04
+    documents: [accident_public_a.pdf]
+    question: 意外身故保额是多少？
+    gold:
+      verdict: likely_covered
+      required_quotes_any:
+        - "按基本保险金额 500,000 元给付身故保险金"
+        - "500,000 元"
+
+  - id: e3-05
+    documents: [accident_public_a.pdf]
+    question: 被保险人从事蹦极运动时发生意外身故，能赔付吗？
+    gold:
+      verdict: not_covered
+      required_quotes_any:
+        - "从事潜水、跳伞、攀岩、蹦极等高风险运动期间"
+        - "责任免除"
+
+  - id: e3-06
+    documents: [accident_public_a.pdf]
+    question: 醉酒驾驶发生意外车祸导致伤残，能赔吗？
+    gold:
+      verdict: not_covered
+      required_quotes_any:
+        - "被保险人醉酒驾驶"
+        - "无证驾驶机动车"
+
+  - id: e3-07
+    documents: [accident_public_a.pdf]
+    question: 攀岩时摔伤腿部骨折，医疗费用能报销吗？
+    gold:
+      verdict: not_covered
+      required_quotes_any:
+        - "从事潜水、跳伞、攀岩、蹦极等高风险运动期间"
+
+  - id: e3-08
+    documents: [accident_public_a.pdf]
+    question: 做近视眼激光手术的花费可以报销吗？
+    gold:
+      verdict: not_covered
+      required_quotes_any:
+        - "因美容整形、近视眼手术等非意外导致的医疗开支"
+
+  - id: e3-09
+    documents: [critical_illness_public_b.pdf]
+    question: 合同的重疾等待期是多少天？
+    gold:
+      verdict: likely_covered
+      required_quotes_any:
+        - "自本合同生效之日起 90 日为等待期"
+        - "90 日为等待期"
+
+  - id: e3-10
+    documents: [critical_illness_public_b.pdf]
+    question: 等待期后确诊严重脑中风后遗症，重疾保额是多少？
+    gold:
+      verdict: likely_covered
+      required_quotes_any:
+        - "按基本保额 500,000 元给付重大疾病保险金"
+        - "500,000 元"
+
+  - id: e3-11
+    documents: [critical_illness_public_b.pdf]
+    question: 初次确诊轻症疾病的赔付比例是多少？
+    gold:
+      verdict: likely_covered
+      required_quotes_any:
+        - "按基本保额的 20%"
+        - "100,000 元"
+
+  - id: e3-12
+    documents: [critical_illness_public_b.pdf]
+    question: 被保险人故意犯罪受伤确诊重疾，保险公司赔吗？
+    gold:
+      verdict: not_covered
+      required_quotes_any:
+        - "被保险人故意自伤、故意犯罪"
+        - "责任免除"
+
+  - id: e3-13
+    documents: [critical_illness_public_b.pdf]
+    question: 吸毒导致的身体严重损害能获赔重大疾病保险金吗？
+    gold:
+      verdict: not_covered
+      required_quotes_any:
+        - "被保险人服用、吸食或注射毒品"
+
+  - id: e3-14
+    documents: [critical_illness_public_b.pdf]
+    question: 接受近视矫正手术能否赔付轻症或重疾？
+    gold:
+      verdict: not_covered
+      required_quotes_any:
+        - "接受美容手术、近视眼矫正手术"
+
+  - id: e3-15
+    documents: [critical_illness_public_b.pdf]
+    question: 等待期内确诊恶性肿瘤，如何处理？
+    gold:
+      verdict: likely_covered
+      required_quotes_any:
+        - "等待期内确诊重大疾病的，退还已交保费，合同终止"
+        - "退还已交保费"
+
+  - id: e3-16
+    documents: [accident_public_a.pdf]
+    question: 走路滑倒骨折到公立医院治疗，社保报销后能报销多少比例？
+    gold:
+      verdict: likely_covered
+      required_quotes_any:
+        - "已获社保报销的按 100% 比例给付"
+        - "100% 比例"
+
+  - id: e3-17
+    documents: [critical_illness_public_b.pdf]
+    question: 宠物咬伤打狂犬疫苗能通过这份重疾险报销吗？
+    gold:
+      verdict: no_basis
+
+  - id: e3-18
+    documents: [accident_public_a.pdf]
+    question: 拔智齿和牙齿正畸的费用这份意外险能报吗？
+    gold:
+      verdict: no_basis
+
+  - id: e3-19
+    documents: [critical_illness_public_b.pdf]
+    question: 飞机航班延误 4 小时以上可以申请延误赔偿金吗？
+    gold:
+      verdict: no_basis
+
+  - id: e3-20
+    documents: [accident_public_a.pdf]
+    question: 房屋因暴雨漏水造成的财产损失能索赔吗？
+    gold:
+      verdict: no_basis

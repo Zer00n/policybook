@@ -1,0 +1,21 @@
+suite: e6_search
+version: 1
+tasks:
+  - id: e6-01
+    category: accident
+    target_product: 平安成人意外险2025
+    faults:
+      - tool: search_web
+        on_call: 1
+        type: timeout
+  - id: e6-02
+    category: medical
+    target_product: 众安尊享e生百万医疗2025
+    faults:
+      - tool: fetch_document
+        on_call: 1
+        type: http_403
+  - id: e6-03
+    category: critical_illness
+    target_product: 达尔文10号重疾险
+    faults: []

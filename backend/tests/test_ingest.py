@@ -2,6 +2,7 @@ import asyncio
 from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
+from unittest.mock import AsyncMock, patch
 from app.db.models import Job
 from app.db.session import SessionLocal
 from app.jobs.queue import worker
@@ -29,8 +30,9 @@ async def test_synthetic_policy_upload_and_pipeline():
     job_id = data["jobs"][0]["job_id"]
     doc_id = data["jobs"][0]["document_id"]
 
-    # 执行 pipeline 处理该任务
-    await worker._process_job(job_id)
+    # 执行 pipeline 处理该任务（mock 步骤 5-10 的大模型在线调用以保持单元测试隔离与高执行速度）
+    with patch("app.ingest.extract.run_document_extraction", new=AsyncMock(return_value={"mock": True})):
+        await worker._process_job(job_id)
 
     # 验证任务完成
     job_res = client.get(f"/api/jobs/{job_id}")
@@ -75,7 +77,8 @@ async def test_scanned_page_ocr_and_pii():
     job_id = data["jobs"][0]["job_id"]
     doc_id = data["jobs"][0]["document_id"]
 
-    await worker._process_job(job_id)
+    with patch("app.ingest.extract.run_document_extraction", new=AsyncMock(return_value={"mock": True})):
+        await worker._process_job(job_id)
 
     job_res = client.get(f"/api/jobs/{job_id}")
     assert job_res.status_code == 200

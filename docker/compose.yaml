@@ -1,0 +1,18 @@
+# docker/compose.yaml
+services:
+  policybook:
+    image: policybook:latest
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: policybook
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      DATA_DIR: /data
+      MODELS_DIR: /models
+    volumes:
+      - ./data:/data
+      - ./models:/models
+    ports:
+      - "8080:8000"

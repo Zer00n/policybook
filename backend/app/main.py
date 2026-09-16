@@ -18,6 +18,8 @@ from app.api.overview import router as overview_router
 from app.api.coverage import router as coverage_router
 from app.api.calendar import router as calendar_router
 from app.api.renewal import router as renewal_router
+from app.api.reports import router as reports_router
+from app.api.eval import router as eval_router
 
 from app.db.init_db import init_db
 from app.jobs.queue import worker
@@ -31,10 +33,10 @@ async def lifespan(app: FastAPI):
     settings.abs_data_dir.mkdir(parents=True, exist_ok=True)
     settings.abs_models_dir.mkdir(parents=True, exist_ok=True)
     (settings.abs_data_dir / "llm_raw").mkdir(parents=True, exist_ok=True)
-    (settings.abs_data_dir / "documents").mkdir(parents=True, exist_ok=True)
     init_db()
     import os
-    if not os.environ.get("PYTEST_CURRENT_TEST"):
+    import sys
+    if not os.environ.get("PYTEST_CURRENT_TEST") and "pytest" not in sys.modules:
         worker.start()
         start_scheduler()
     yield
@@ -121,5 +123,7 @@ app.include_router(overview_router, prefix="/api")
 app.include_router(coverage_router, prefix="/api")
 app.include_router(calendar_router)
 app.include_router(renewal_router, prefix="/api")
+app.include_router(reports_router, prefix="/api")
+app.include_router(eval_router, prefix="/api")
 
 
