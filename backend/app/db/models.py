@@ -246,3 +246,66 @@ class AppSetting(Base):
     value = Column(Text, nullable=False)  # JSON string or plain text
     updated_at = Column(DateTime(timezone=True), default=now_utc, onupdate=now_utc)
 
+
+class ChatSession(Base):
+    __tablename__ = "chat_session"
+
+    id = Column(String(26), primary_key=True, default=generate_ulid)
+    kind = Column(String(30), default="renewal")  # renewal / qa
+    policy_id = Column(String(26), ForeignKey("policy.id", ondelete="CASCADE"), index=True, nullable=True)
+    state = Column(String(50), default="START")
+    profile_json = Column(Text, nullable=True)  # JSON {key: {value, source_message_id, label}}
+    scope_json = Column(Text, nullable=True)  # JSON {candidate_doc_ids: [...], search_query: ...}
+    created_at = Column(DateTime(timezone=True), default=now_utc)
+    updated_at = Column(DateTime(timezone=True), default=now_utc, onupdate=now_utc)
+
+    policy = relationship("Policy")
+    messages = relationship("ChatMessage", back_populates="session", cascade="all, delete-orphan", order_by="ChatMessage.created_at")
+    source_records = relationship("SourceRecord", back_populates="session", cascade="all, delete-orphan")
+    tool_calls = relationship("ToolCallRecord", back_populates="session", cascade="all, delete-orphan")
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_message"
+
+    id = Column(String(26), primary_key=True, default=generate_ulid)
+    session_id = Column(String(26), ForeignKey("chat_session.id", ondelete="CASCADE"), index=True, nullable=False)
+    role = Column(String(20), nullable=False)  # user / assistant / system / tool
+    content = Column(Text, nullable=False)
+    structured_json = Column(Text, nullable=True)  # Questions, Report, or other card payloads
+    created_at = Column(DateTime(timezone=True), default=now_utc)
+
+    session = relationship("ChatSession", back_populates="messages")
+
+
+class SourceRecord(Base):
+    __tablename__ = "source_record"
+
+    id = Column(String(26), primary_key=True, default=generate_ulid)
+    session_id = Column(String(26), ForeignKey("chat_session.id", ondelete="CASCADE"), index=True, nullable=False)
+    url = Column(String(1000), nullable=False)
+    domain = Column(String(255), nullable=False)
+    title = Column(String(500), nullable=True)
+    retrieved_at = Column(DateTime(timezone=True), default=now_utc)
+    via = Column(String(20), default="search")  # search / fetch
+    http_status = Column(Integer, nullable=True)
+    sha256 = Column(String(64), nullable=True)
+
+    session = relationship("ChatSession", back_populates="source_records")
+
+
+class ToolCallRecord(Base):
+    __tablename__ = "tool_call"
+
+    id = Column(String(26), primary_key=True, default=generate_ulid)
+    session_id = Column(String(26), ForeignKey("chat_session.id", ondelete="CASCADE"), index=True, nullable=False)
+    llm_call_id = Column(String(26), nullable=True)
+    name = Column(String(100), nullable=False)
+    args_json = Column(Text, nullable=True)
+    result_digest = Column(Text, nullable=True)
+    ok = Column(Boolean, default=True)
+    injected_fault = Column(String(100), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=now_utc)
+
+    session = relationship("ChatSession", back_populates="tool_calls")
+

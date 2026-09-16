@@ -1,0 +1,70 @@
+{
+  "timestamp": "2026-09-16T07:39:18.131927+00:00",
+  "security_tests": {
+    "total_probes": 5,
+    "all_blocked": true,
+    "results": [
+      {
+        "url": "http://127.0.0.1:8080/internal.pdf",
+        "label": "拦截回环地址 127.0.0.1 (SSRF)",
+        "passed": true,
+        "exception": "DomainNotAllowedError",
+        "detail": "域名 '127.0.0.1' 不在设置的官网与监管披露平台白名单中"
+      },
+      {
+        "url": "http://192.168.1.100/admin.pdf",
+        "label": "拦截私有局域网地址 192.168.1.100 (SSRF)",
+        "passed": true,
+        "exception": "DomainNotAllowedError",
+        "detail": "域名 '192.168.1.100' 不在设置的官网与监管披露平台白名单中"
+      },
+      {
+        "url": "http://169.254.169.254/latest/meta-data/",
+        "label": "拦截云主机元数据地址 (SSRF)",
+        "passed": true,
+        "exception": "DomainNotAllowedError",
+        "detail": "域名 '169.254.169.254' 不在设置的官网与监管披露平台白名单中"
+      },
+      {
+        "url": "https://malicious-scam.com/fake_policy.pdf",
+        "label": "拦截非白名单外部域名",
+        "passed": true,
+        "exception": "DomainNotAllowedError",
+        "detail": "域名 'malicious-scam.com' 不在设置的官网与监管披露平台白名单中"
+      },
+      {
+        "url": "ftp://pingan.com/doc.pdf",
+        "label": "拦截非 http/https 协议",
+        "passed": true,
+        "exception": "InvalidURLError",
+        "detail": "只允许 http 或 https 协议，不支持 'ftp'"
+      }
+    ]
+  },
+  "search_timeout_disclosure": {
+    "session_id": "01M2MJFR89DRFB5KWWYAFHAXTQ",
+    "final_state": "END",
+    "report_status": "search_failed",
+    "search_failure_reason": "联网检索超时 (模拟联网搜索超时 (timeout after 5000ms))",
+    "narrative_disclosure": "【检索未完成】本会话在尝试检索合规白名单条款时未能完成检索。\n原因说明：联网检索超时 (模拟联网搜索超时 (timeout after 5000ms))。\n红线保护机制：系统严格遵循防编造原则，在联网数据不可信或未取得时，严禁使用模型记忆自行编造产品事实。"
+  },
+  "full_session_flow": {
+    "session_id": "01M2MJFR8ZCK28V2X2B0FDZ0QD",
+    "final_state": "END",
+    "matrix_products": 3,
+    "matrix_rows": 8,
+    "customer_service_questions_count": 3,
+    "missing_info_count": 2
+  },
+  "url_provenance_check": {
+    "recorded_sources_count": 5,
+    "urls_in_narrative_count": 1,
+    "all_urls_verified": true,
+    "details": [
+      {
+        "url": "https://www.pingan.com/product/pingan_accident_plus_2025.html",
+        "in_source_record": true
+      }
+    ]
+  }
+}

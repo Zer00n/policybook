@@ -17,6 +17,7 @@ from app.api.claim import router as claim_router
 from app.api.overview import router as overview_router
 from app.api.coverage import router as coverage_router
 from app.api.calendar import router as calendar_router
+from app.api.renewal import router as renewal_router
 
 from app.db.init_db import init_db
 from app.jobs.queue import worker
@@ -119,5 +120,6 @@ app.include_router(claim_router, prefix="/api")
 app.include_router(overview_router, prefix="/api")
 app.include_router(coverage_router, prefix="/api")
 app.include_router(calendar_router)
+app.include_router(renewal_router, prefix="/api")
 
 

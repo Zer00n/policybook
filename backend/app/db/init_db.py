@@ -13,6 +13,10 @@ from app.db.models import (
     LLMCall,
     Reminder,
     AppSetting,
+    ChatSession,
+    ChatMessage,
+    SourceRecord,
+    ToolCallRecord,
 )
 
 
