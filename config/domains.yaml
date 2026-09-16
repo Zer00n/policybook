@@ -1,0 +1,17 @@
+# 续保检索白名单域名列表（官网及监管披露平台）
+allowed_domains:
+  - cbirc.gov.cn
+  - nfra.gov.cn
+  - iachina.cn
+  - e-chinaslife.com
+  - pingan.com
+  - cpic.com.cn
+  - taikang.com
+  - picc.com
+  - newchinalife.com
+  - sinosig.com
+  - zhongan.com
+  - alicenter.com.cn
+  - sunshinei.com
+  - tplife.com
+  - faponline.com.cn

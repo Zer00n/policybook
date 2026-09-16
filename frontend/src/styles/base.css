@@ -1,0 +1,211 @@
+/* frontend/src/styles/base.css */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: var(--fs-16);
+  line-height: var(--lh-ui);
+  color: var(--text);
+  background-color: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* 链接无下划线 */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* 数字等宽对齐 */
+.num,
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 焦点环：2px 青瓷色外描边加 2px 偏移，在玻璃背景上清晰可见 */
+:focus-visible {
+  outline: 2px solid var(--ok);
+  outline-offset: 2px;
+}
+
+/* 按钮通用重置与变体 */
+button {
+  font-family: inherit;
+  font-size: var(--fs-14);
+  font-weight: 500;
+  border-radius: var(--r-control);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  transition: var(--trans-fast);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* 主操作按钮：青瓷实底白字 */
+.btn-primary {
+  background-color: var(--ok);
+  color: #ffffff;
+  border-color: var(--ok);
+}
+
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+/* 次级按钮：玻璃底 */
+.btn-secondary {
+  background-color: var(--glass-fill);
+  border-color: var(--glass-stroke);
+  color: var(--text);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--glass-fill-strong);
+}
+
+/* 危险操作按钮：朱砂描边 */
+.btn-danger {
+  border-color: var(--risk);
+  color: var(--risk);
+  background: transparent;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: color-mix(in oklch, var(--risk) 10%, transparent);
+}
+
+/* 状态徽标 (Badge) */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-12);
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.badge--ok {
+  background-color: color-mix(in oklch, var(--ok) 15%, transparent);
+  color: var(--ok);
+}
+.badge--ok .badge-dot { background-color: var(--ok); }
+
+.badge--pending {
+  background-color: color-mix(in oklch, var(--pending) 15%, transparent);
+  color: var(--pending);
+}
+.badge--pending .badge-dot { background-color: var(--pending); }
+
+.badge--risk {
+  background-color: color-mix(in oklch, var(--risk) 15%, transparent);
+  color: var(--risk);
+}
+.badge--risk .badge-dot { background-color: var(--risk); }
+
+.badge--ai {
+  background-color: color-mix(in oklch, var(--ai) 15%, transparent);
+  color: var(--ai);
+}
+.badge--ai .badge-dot { background-color: var(--ai); }
+
+/* 原文引用卡片 */
+.quote-card {
+  font-family: var(--font-quote);
+  font-size: var(--fs-14);
+  line-height: var(--lh-quote);
+  border-left: 2px solid var(--ok);
+  background: var(--glass-fill);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: 0 var(--r-control) var(--r-control) 0;
+  color: var(--text);
+  margin: var(--sp-2) 0;
+}
+
+.quote-card--pending {
+  border-left-color: var(--pending);
+}
+
+.quote-card--risk {
+  border-left-color: var(--risk);
+}
+
+/* 模型生成内容标记 */
+.ai-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  color: var(--ai);
+  font-size: var(--fs-12);
+  font-weight: 500;
+}
+
+/* 表单控件 */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-3);
+}
+
+.form-label {
+  font-size: var(--fs-14);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.form-input {
+  font-family: inherit;
+  font-size: var(--fs-14);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-control);
+  border: 1px solid var(--glass-stroke);
+  background: var(--glass-fill);
+  color: var(--text);
+  transition: var(--trans-fast);
+}
+
+.form-input:focus {
+  background: var(--glass-fill-strong);
+  border-color: var(--ok);
+  outline: none;
+}
+
+.form-error {
+  font-size: var(--fs-12);
+  color: var(--risk);
+}

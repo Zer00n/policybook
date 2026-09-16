@@ -1,0 +1,50 @@
+category: accident
+dimensions:
+  - key: travel_mode
+    label: 出行方式
+    weight: 0.9
+    question_hint: 出差主要坐飞机、高铁还是自驾？
+    options: [飞机为主, 高铁为主, 自驾为主, 混合]
+    affects: [transport_extra]
+  - key: overseas
+    label: 境外出行
+    weight: 0.8
+    question_hint: 今年会去境外出差或旅游吗？
+    options: [会, 不会, 不确定]
+    affects: [accident_medical]
+  - key: work_site
+    label: 工作场所
+    weight: 0.9
+    question_hint: 出差或日常工作是在办公室还是工地、厂区、野外？
+    options: [办公室, 工地或厂区, 野外, 混合]
+    affects: [occupation_class]
+  - key: sudden_death
+    label: 猝死责任
+    weight: 0.7
+    question_hint: 当前保单是否包含猝死责任？工作压力大或经常加班时是否在意该保障？
+    options: [需要猝死保障, 不需要, 视保费情况而定]
+    affects: [sudden_death]
+  - key: accident_medical
+    label: 意外医疗
+    weight: 0.8
+    question_hint: 是否有社保或百万医疗险？意外医疗是否需要覆盖社保外用药？
+    options: [必须覆盖社保外用药, 仅社保内即可, 已有充足百万医疗]
+    affects: [accident_medical]
+  - key: group_insurance
+    label: 团体意外险
+    weight: 0.6
+    question_hint: 公司是否提供团体意外险？保额大概多少？
+    options: [有充足团险, 有少量团险, 无团险]
+    affects: [deductible, limit]
+  - key: extreme_sports
+    label: 运动爱好
+    weight: 0.7
+    question_hint: 平时是否有滑雪、潜水、攀岩等特定户外运动爱好？
+    options: [经常参与高风险运动, 偶尔参与, 从不参与]
+    affects: [exclusions]
+  - key: family_liability
+    label: 家庭责任
+    weight: 0.7
+    question_hint: 家里是否有房贷、车贷或子女抚养等重点财务责任？
+    options: [负债较高需要高保额, 责任适中, 无负债]
+    affects: [death, disability]

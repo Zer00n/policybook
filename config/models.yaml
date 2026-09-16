@@ -1,0 +1,16 @@
+default: evolving
+models:
+  evolving:
+    provider: ark
+    base_url: https://ark.cn-beijing.volces.com/api/v3
+    model_id: doubao-seed-evolving
+    api_key_env: ARK_API_KEY
+    display_name: Seed-2.1-pro-0915
+    supports: [image, tools, web_search]
+  pro_0628:
+    provider: ark
+    base_url: https://ark.cn-beijing.volces.com/api/v3
+    model_id: doubao-seed-2-1-pro-260628
+    api_key_env: ARK_API_KEY
+    display_name: Seed-2.1-pro-0628
+    supports: [image, tools, web_search]

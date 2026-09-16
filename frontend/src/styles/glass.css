@@ -1,0 +1,113 @@
+/* frontend/src/styles/glass.css */
+
+.glass {
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-stroke);
+  box-shadow: var(--glass-edge), var(--glass-shadow);
+  border-radius: var(--r-panel);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+}
+
+.glass--strong {
+  background: var(--glass-fill-strong);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: var(--glass-fill-strong);
+  }
+}
+
+/* 简洁模式：关闭模糊与环境光动画 */
+:root[data-lite="true"] .glass {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: var(--glass-fill-strong);
+}
+
+/* 环境光：固定在视口底层的三团模糊色斑，40 秒缓慢漂移 */
+.aura {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--bg);
+  pointer-events: none;
+}
+
+.aura::before,
+.aura::after,
+.aura > i {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.55;
+  will-change: transform;
+}
+
+.aura::before {
+  width: 52vmax;
+  height: 52vmax;
+  background: var(--aura-1);
+  top: -18vmax;
+  left: -12vmax;
+  animation: drift-a 40s var(--ease-inout) infinite alternate;
+}
+
+.aura::after {
+  width: 46vmax;
+  height: 46vmax;
+  background: var(--aura-2);
+  bottom: -20vmax;
+  right: -10vmax;
+  animation: drift-b 46s var(--ease-inout) infinite alternate;
+}
+
+.aura > i {
+  width: 30vmax;
+  height: 30vmax;
+  background: var(--aura-3);
+  top: 40%;
+  left: 45%;
+  animation: drift-c 52s var(--ease-inout) infinite alternate;
+}
+
+@keyframes drift-a {
+  to {
+    transform: translate(8vmax, 6vmax) scale(1.08);
+  }
+}
+
+@keyframes drift-b {
+  to {
+    transform: translate(-6vmax, -8vmax) scale(0.94);
+  }
+}
+
+@keyframes drift-c {
+  to {
+    transform: translate(-10vmax, 4vmax) scale(1.12);
+  }
+}
+
+/* 叠加极细噪点，避免大面积渐变出现色带 */
+.aura {
+  background-image: url("/textures/noise-128.png");
+  background-blend-mode: soft-light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aura::before,
+  .aura::after,
+  .aura > i {
+    animation: none;
+  }
+}
+
+:root[data-lite="true"] .aura::before,
+:root[data-lite="true"] .aura::after,
+:root[data-lite="true"] .aura > i {
+  display: none;
+}

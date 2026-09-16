@@ -1,0 +1,117 @@
+/* frontend/src/styles/tokens.css */
+@font-face {
+  font-family: "HarmonyOS Sans SC";
+  src: url("/fonts/HarmonyOS_Sans_SC_Regular.woff2") format("woff2");
+  font-weight: 400; font-display: swap;
+}
+@font-face {
+  font-family: "HarmonyOS Sans SC";
+  src: url("/fonts/HarmonyOS_Sans_SC_Medium.woff2") format("woff2");
+  font-weight: 500; font-display: swap;
+}
+@font-face {
+  font-family: "HarmonyOS Sans SC";
+  src: url("/fonts/HarmonyOS_Sans_SC_Bold.woff2") format("woff2");
+  font-weight: 700; font-display: swap;
+}
+@font-face {
+  font-family: "Source Han Serif SC";
+  src: url("/fonts/SourceHanSerifSC-Regular.woff2") format("woff2");
+  font-weight: 400; font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+
+  /* 基础色 */
+  --c-mist: #EEF2F6;
+  --c-pool: #14233A;
+  --c-celadon: #2A8F82;
+  --c-apricot: #C98217;
+  --c-cinnabar: #C8443B;
+  --c-dusk: #5E54C9;
+  --c-paper: #FFFDF8;
+
+  /* 语义色 */
+  --bg: var(--c-mist);
+  --text: var(--c-pool);
+  --text-muted: color-mix(in oklch, var(--c-pool) 62%, var(--c-mist));
+  --ok: var(--c-celadon);
+  --pending: var(--c-apricot);
+  --risk: var(--c-cinnabar);
+  --ai: var(--c-dusk);
+
+  /* 玻璃 */
+  --glass-fill: color-mix(in oklch, white 58%, transparent);
+  --glass-fill-strong: color-mix(in oklch, white 76%, transparent);
+  --glass-stroke: color-mix(in oklch, white 70%, transparent);
+  --glass-edge: inset 0 1px 0 color-mix(in oklch, white 85%, transparent);
+  --glass-blur: 18px;
+  --glass-shadow:
+    0 1px 2px color-mix(in oklch, var(--c-pool) 8%, transparent),
+    0 12px 32px -12px color-mix(in oklch, var(--c-pool) 22%, transparent);
+
+  /* 环境光 */
+  --aura-1: #9FD8CF;
+  --aura-2: #B9C6F2;
+  --aura-3: #F4D9B0;
+
+  /* 字体 */
+  --font-ui: "HarmonyOS Sans SC", system-ui, -apple-system, "PingFang SC", "Microsoft YaHei UI", sans-serif;
+  --font-quote: "Source Han Serif SC", "Songti SC", "SimSun", serif;
+
+  /* 字号：以 16px 为基准的 1.2 比例，中文界面不宜跨度过大 */
+  --fs-12: 0.75rem;
+  --fs-14: 0.875rem;
+  --fs-16: 1rem;
+  --fs-19: 1.1875rem;
+  --fs-23: 1.4375rem;
+  --fs-28: 1.75rem;
+  --fs-34: 2.125rem;
+  --lh-ui: 1.6;
+  --lh-quote: 1.85;
+
+  /* 间距：4 的倍数 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* 圆角分级 */
+  --r-panel: 22px;
+  --r-control: 12px;
+  --r-pill: 999px;
+  --r-page: 6px;
+
+  /* 动效 */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 140ms;
+  --dur-base: 220ms;
+  --dur-slow: 480ms;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0E1A2B;
+  --text: #E6ECF3;
+  --text-muted: color-mix(in oklch, #E6ECF3 62%, #0E1A2B);
+  --ok: #4FC2B2;
+  --pending: #F0B452;
+  --risk: #F07A70;
+  --ai: #9C94F2;
+  --glass-fill: color-mix(in oklch, #1B2B42 55%, transparent);
+  --glass-fill-strong: color-mix(in oklch, #1B2B42 78%, transparent);
+  --glass-stroke: color-mix(in oklch, white 12%, transparent);
+  --glass-edge: inset 0 1px 0 color-mix(in oklch, white 10%, transparent);
+  --glass-shadow:
+    0 1px 2px rgb(0 0 0 / 0.3),
+    0 16px 40px -16px rgb(0 0 0 / 0.55);
+  --aura-1: #1F5C58;
+  --aura-2: #2E3A75;
+  --aura-3: #5A4323;
+}
