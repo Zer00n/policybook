@@ -1,0 +1,35 @@
+{
+  "milestone": "M4",
+  "backend_tests_total": 37,
+  "backend_tests_passed": 37,
+  "backend_test_duration_seconds": 500.57,
+  "m4_specific_tests_total": 8,
+  "m4_specific_tests_passed": 8,
+  "m4_specific_test_duration_seconds": 0.92,
+  "frontend_build_status": "success",
+  "frontend_build_duration_seconds": 3.56,
+  "screenshots_count": 6,
+  "screenshots": [
+    "members_radar_heatmap_1440.png",
+    "overview_page_1440.png",
+    "overview_page_390.png",
+    "overview_page_768.png",
+    "settings_calendar_ics_1440.png",
+    "timeline_gap_closeup_1440.png"
+  ],
+  "modules_tested": [
+    "tests/test_calendar_ics.py",
+    "tests/test_claim_api.py",
+    "tests/test_claim_engine.py",
+    "tests/test_coverage_radar.py",
+    "tests/test_health.py",
+    "tests/test_ingest.py",
+    "tests/test_members.py",
+    "tests/test_models.py",
+    "tests/test_overview.py",
+    "tests/test_pii.py",
+    "tests/test_policy_pipeline.py",
+    "tests/test_qa.py",
+    "tests/test_utils.py"
+  ]
+}

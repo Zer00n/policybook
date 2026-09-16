@@ -11,6 +11,8 @@ from app.db.models import (
     Clause,
     Evidence,
     LLMCall,
+    Reminder,
+    AppSetting,
 )
 
 

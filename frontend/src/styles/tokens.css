@@ -40,6 +40,8 @@
   --pending: var(--c-apricot);
   --risk: var(--c-cinnabar);
   --ai: var(--c-dusk);
+  --danger: var(--risk);
+  --accent: var(--pending);
 
   /* 玻璃 */
   --glass-fill: color-mix(in oklch, white 58%, transparent);
@@ -104,6 +106,8 @@
   --pending: #F0B452;
   --risk: #F07A70;
   --ai: #9C94F2;
+  --danger: var(--risk);
+  --accent: var(--pending);
   --glass-fill: color-mix(in oklch, #1B2B42 55%, transparent);
   --glass-fill-strong: color-mix(in oklch, #1B2B42 78%, transparent);
   --glass-stroke: color-mix(in oklch, white 12%, transparent);

@@ -221,3 +221,28 @@ class LLMCall(Base):
     verify_summary_json = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), default=now_utc)
 
+
+class Reminder(Base):
+    __tablename__ = "reminder"
+
+    id = Column(String(26), primary_key=True, default=generate_ulid)
+    policy_id = Column(String(26), ForeignKey("policy.id", ondelete="CASCADE"), index=True, nullable=True)
+    member_id = Column(String(26), ForeignKey("member.id", ondelete="SET NULL"), index=True, nullable=True)
+    kind = Column(String(50), nullable=False)  # expiring_60d / expiring_30d / expiring_7d / waiting_end / payment_due
+    due_date = Column(String(20), nullable=False)  # YYYY-MM-DD
+    title = Column(String(200), nullable=False)
+    content = Column(Text, nullable=True)
+    status = Column(String(20), default="pending")  # pending / dismissed / resolved
+    created_at = Column(DateTime(timezone=True), default=now_utc)
+
+    policy = relationship("Policy")
+    member = relationship("Member")
+
+
+class AppSetting(Base):
+    __tablename__ = "app_setting"
+
+    key = Column(String(100), primary_key=True)
+    value = Column(Text, nullable=False)  # JSON string or plain text
+    updated_at = Column(DateTime(timezone=True), default=now_utc, onupdate=now_utc)
+

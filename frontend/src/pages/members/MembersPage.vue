@@ -8,7 +8,11 @@ import {
   ShieldCheck,
   Lock,
   UserCheck,
+  Shield,
+  Activity,
 } from 'lucide-vue-next'
+import CoverageRadar from '@/components/charts/CoverageRadar.vue'
+import CoverageHeatmap from '@/components/charts/CoverageHeatmap.vue'
 
 interface Member {
   id: string
@@ -116,18 +120,41 @@ async function submitForm() {
   }
 
   showModal.value = false
-  fetchMembers()
+  await fetchMembers()
+  fetchCoverageAnalytics()
 }
 
 async function deleteMember(id: string) {
   if (confirm('确定删除该家庭成员记录吗？')) {
     await fetch(`/api/members/${id}`, { method: 'DELETE' })
-    fetchMembers()
+    await fetchMembers()
+    fetchCoverageAnalytics()
+  }
+}
+
+const radarData = ref<{ members: any[]; dimension_names: string[] }>({ members: [], dimension_names: [] })
+const heatmapData = ref<{ categories: any[]; rows: any[] }>({ categories: [], rows: [] })
+
+async function fetchCoverageAnalytics() {
+  try {
+    const [radarRes, heatRes] = await Promise.all([
+      fetch('/api/coverage/radar'),
+      fetch('/api/coverage/heatmap')
+    ])
+    if (radarRes.ok) {
+      radarData.value = await radarRes.json()
+    }
+    if (heatRes.ok) {
+      heatmapData.value = await heatRes.json()
+    }
+  } catch (err) {
+    console.error('Failed to load coverage analytics:', err)
   }
 }
 
 onMounted(() => {
   fetchMembers()
+  fetchCoverageAnalytics()
 })
 </script>
 
@@ -203,6 +230,28 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- 保障覆盖深度分析：雷达图与缺口热力图 (DEV-GUIDE 10.7) -->
+    <section v-if="members.length > 0" class="coverage-analytics-section">
+      <div class="analytics-header">
+        <h2 class="section-title">家庭保障覆盖与缺口分析</h2>
+        <p class="section-subtitle">六维保障雷达与成员缺口热力矩阵（参考保额可在系统设置中自定义维护）</p>
+      </div>
+
+      <div class="analytics-row">
+        <CoverageRadar
+          v-if="radarData.members.length > 0"
+          :members="radarData.members"
+          :dimension-names="radarData.dimension_names"
+        />
+
+        <CoverageHeatmap
+          v-if="heatmapData.rows.length > 0"
+          :categories="heatmapData.categories"
+          :rows="heatmapData.rows"
+        />
+      </div>
+    </section>
 
     <!-- 空状态 -->
     <div v-else class="glass empty-panel">
@@ -536,5 +585,24 @@ onMounted(() => {
   justify-content: flex-end;
   gap: var(--sp-3);
   margin-top: var(--sp-3);
+}
+
+.coverage-analytics-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+
+.analytics-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.analytics-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
 }
 </style>

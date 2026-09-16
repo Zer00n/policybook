@@ -14,9 +14,13 @@ from app.api.review import router as review_router
 from app.api.policies import router as policies_router
 from app.api.qa import router as qa_router
 from app.api.claim import router as claim_router
+from app.api.overview import router as overview_router
+from app.api.coverage import router as coverage_router
+from app.api.calendar import router as calendar_router
 
 from app.db.init_db import init_db
 from app.jobs.queue import worker
+from app.jobs.scheduler import start_scheduler, stop_scheduler
 from app.settings import settings
 
 
@@ -31,8 +35,10 @@ async def lifespan(app: FastAPI):
     import os
     if not os.environ.get("PYTEST_CURRENT_TEST"):
         worker.start()
+        start_scheduler()
     yield
     worker.stop()
+    stop_scheduler()
 
 
 
@@ -110,5 +116,8 @@ app.include_router(review_router, prefix="/api")
 app.include_router(policies_router, prefix="/api")
 app.include_router(qa_router, prefix="/api")
 app.include_router(claim_router, prefix="/api")
+app.include_router(overview_router, prefix="/api")
+app.include_router(coverage_router, prefix="/api")
+app.include_router(calendar_router)
 
 
