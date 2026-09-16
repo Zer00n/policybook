@@ -21,6 +21,15 @@ class ModelManager:
         else:
             self._config = {"default": "evolving", "models": {}}
 
+        # 优先使用 .env 中的配置覆盖模型 ID
+        models = self._config.get("models", {})
+        if "evolving" in models and settings.model_primary:
+            models["evolving"]["model_id"] = settings.model_primary
+        if "pro_0628" in models and settings.model_baseline:
+            models["pro_0628"]["model_id"] = settings.model_baseline
+            models["pro_0628"]["display_name"] = f"Baseline ({settings.model_baseline})"
+
+
     @property
     def default_model_key(self) -> str:
         return self._config.get("default", "evolving")

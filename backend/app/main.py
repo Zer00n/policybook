@@ -7,6 +7,12 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.health import router as health_router
 from app.api.settings import router as settings_router
+from app.api.members import router as members_router
+from app.api.imports import router as imports_router
+from app.api.documents import router as documents_router
+
+from app.db.init_db import init_db
+from app.jobs.queue import worker
 from app.settings import settings
 
 
@@ -16,7 +22,12 @@ async def lifespan(app: FastAPI):
     settings.abs_data_dir.mkdir(parents=True, exist_ok=True)
     settings.abs_models_dir.mkdir(parents=True, exist_ok=True)
     (settings.abs_data_dir / "llm_raw").mkdir(parents=True, exist_ok=True)
+    (settings.abs_data_dir / "documents").mkdir(parents=True, exist_ok=True)
+    init_db()
+    worker.start()
     yield
+    worker.stop()
+
 
 
 app = FastAPI(
@@ -86,3 +97,7 @@ async def general_exception_handler(request: Request, exc: Exception):
 # Mount routers under /api
 app.include_router(health_router, prefix="/api")
 app.include_router(settings_router, prefix="/api")
+app.include_router(members_router, prefix="/api")
+app.include_router(imports_router, prefix="/api")
+app.include_router(documents_router, prefix="/api")
+
