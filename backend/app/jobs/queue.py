@@ -103,12 +103,13 @@ class JobWorker:
                 db.commit()
         except Exception as exc:
             db.rollback()
+            err_msg = str(exc) or repr(exc)
             job = db.query(Job).filter(Job.id == job_id).first()
             if job:
                 job.status = "failed"
-                job.error = str(exc)
+                job.error = err_msg
                 db.commit()
-            await broadcaster.broadcast(job_id, "error", {"code": "JOB_ERROR", "message": str(exc)})
+            await broadcaster.broadcast(job_id, "error", {"code": "JOB_ERROR", "message": err_msg})
         finally:
             self._active_jobs.discard(job_id)
             db.close()

@@ -31,7 +31,10 @@ def encrypt_str(plain_text: str | None) -> str | None:
 
 
 def decrypt_str(cipher_text: str | None) -> str | None:
-    if cipher_text is None:
+    if not cipher_text:
         return None
-    f = get_fernet()
-    return f.decrypt(cipher_text.encode("utf-8")).decode("utf-8")
+    try:
+        f = get_fernet()
+        return f.decrypt(cipher_text.encode("utf-8")).decode("utf-8")
+    except Exception:
+        return None

@@ -12,6 +12,8 @@ from app.api.imports import router as imports_router
 from app.api.documents import router as documents_router
 from app.api.review import router as review_router
 from app.api.policies import router as policies_router
+from app.api.qa import router as qa_router
+from app.api.claim import router as claim_router
 
 from app.db.init_db import init_db
 from app.jobs.queue import worker
@@ -106,5 +108,7 @@ app.include_router(imports_router, prefix="/api")
 app.include_router(documents_router, prefix="/api")
 app.include_router(review_router, prefix="/api")
 app.include_router(policies_router, prefix="/api")
+app.include_router(qa_router, prefix="/api")
+app.include_router(claim_router, prefix="/api")
 
 

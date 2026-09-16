@@ -1,0 +1,31 @@
+{
+  "milestone": "M3",
+  "backend_tests_total": 29,
+  "backend_tests_passed": 29,
+  "backend_test_duration_seconds": 198.09,
+  "m3_specific_tests_total": 10,
+  "m3_specific_tests_passed": 10,
+  "m3_specific_test_duration_seconds": 29.35,
+  "frontend_build_status": "success",
+  "frontend_build_duration_seconds": 3.23,
+  "screenshots_count": 5,
+  "screenshots": [
+    "ask_page_1440.png",
+    "ask_page_390.png",
+    "ask_page_drawer_1440.png",
+    "claim_page_drawer_1440.png",
+    "claim_page_waterfall_1440.png"
+  ],
+  "modules_tested": [
+    "tests/test_claim_api.py",
+    "tests/test_claim_engine.py",
+    "tests/test_health.py",
+    "tests/test_ingest.py",
+    "tests/test_members.py",
+    "tests/test_models.py",
+    "tests/test_pii.py",
+    "tests/test_policy_pipeline.py",
+    "tests/test_qa.py",
+    "tests/test_utils.py"
+  ]
+}
