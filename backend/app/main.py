@@ -10,6 +10,8 @@ from app.api.settings import router as settings_router
 from app.api.members import router as members_router
 from app.api.imports import router as imports_router
 from app.api.documents import router as documents_router
+from app.api.review import router as review_router
+from app.api.policies import router as policies_router
 
 from app.db.init_db import init_db
 from app.jobs.queue import worker
@@ -24,7 +26,9 @@ async def lifespan(app: FastAPI):
     (settings.abs_data_dir / "llm_raw").mkdir(parents=True, exist_ok=True)
     (settings.abs_data_dir / "documents").mkdir(parents=True, exist_ok=True)
     init_db()
-    worker.start()
+    import os
+    if not os.environ.get("PYTEST_CURRENT_TEST"):
+        worker.start()
     yield
     worker.stop()
 
@@ -100,4 +104,7 @@ app.include_router(settings_router, prefix="/api")
 app.include_router(members_router, prefix="/api")
 app.include_router(imports_router, prefix="/api")
 app.include_router(documents_router, prefix="/api")
+app.include_router(review_router, prefix="/api")
+app.include_router(policies_router, prefix="/api")
+
 

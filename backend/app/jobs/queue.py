@@ -17,6 +17,7 @@ class JobWorker:
     def __init__(self):
         self._running = False
         self._task: asyncio.Task | None = None
+        self._active_jobs: set[str] = set()
 
     def start(self):
         if not self._running:
@@ -59,16 +60,34 @@ class JobWorker:
         try:
             job = db.query(Job).filter(Job.status == "queued").order_by(Job.created_at.asc()).first()
             if job:
-                job.status = "running"
-                db.commit()
                 return job.id
             return None
         finally:
             db.close()
 
     async def _process_job(self, job_id: str):
+        if job_id in self._active_jobs:
+            return
+        self._active_jobs.add(job_id)
+
         db = SessionLocal()
         try:
+            # 原子更新：只有在状态为 queued 时才认领为 running
+            affected = db.query(Job).filter(Job.id == job_id, Job.status == "queued").update({"status": "running"})
+            db.commit()
+            if affected == 0:
+                # 已被后台 worker 或其他协程认领，等待其执行完毕
+                for _ in range(1200):
+                    chk_db = SessionLocal()
+                    try:
+                        cur = chk_db.query(Job).filter(Job.id == job_id).first()
+                        if not cur or cur.status != "running":
+                            break
+                    finally:
+                        chk_db.close()
+                    await asyncio.sleep(0.1)
+                return
+
             job = db.query(Job).filter(Job.id == job_id).first()
             if not job:
                 return
@@ -91,6 +110,7 @@ class JobWorker:
                 db.commit()
             await broadcaster.broadcast(job_id, "error", {"code": "JOB_ERROR", "message": str(exc)})
         finally:
+            self._active_jobs.discard(job_id)
             db.close()
 
     async def _run_import_pipeline(self, db: Session, job: Job, payload: dict):
@@ -129,7 +149,8 @@ class JobWorker:
 
         rendered_pages = await asyncio.to_thread(render_file_to_pages, file_path, doc_dir)
 
-        # 写入 Page 记录
+        # 写入 Page 记录（幂等处理：先清理该文档可能存在的旧页面记录）
+        db.query(Page).filter(Page.document_id == document_id).delete()
         pages_db = []
         for rp in rendered_pages:
             p = Page(
@@ -188,7 +209,11 @@ class JobWorker:
             p.text_masked = res.masked_text
             p.pii_status = res.pii_status
 
-            # 保存 mappings 到 pii_mapping
+        # 保存 mappings 到 pii_mapping（先清理旧记录保持幂等）
+        db.query(PiiMapping).filter(PiiMapping.document_id == document_id).delete()
+        for p, rp in zip(pages_db, rendered_pages):
+            raw_text = decrypt_str(p.text_raw_enc) or ""
+            res = deidentifier.deidentify_text(raw_text)
             for item in res.mappings:
                 mapping = PiiMapping(
                     document_id=document_id,
@@ -199,14 +224,26 @@ class JobWorker:
                 db.add(mapping)
         db.commit()
 
-        # M1 阶段完成至脱敏为止
-        job.step = "pii"
+        # 步骤 5-10: 页面分类、字段抽取、责任项抽取、引用精确校验与草稿核对
+        from app.ingest.extract import run_document_extraction
+
+        async def step_callback(step_name: str, prog: float):
+            job.step = step_name
+            job.progress = prog
+            db.commit()
+            await broadcaster.broadcast(job.id, "step", {"job_id": job.id, "step": step_name, "progress": prog})
+
+        review_draft = await run_document_extraction(db, document_id, job, on_step_callback=step_callback)
+
+        payload["review_data"] = review_draft
+        job.payload_json = json.dumps(payload, ensure_ascii=False)
+        job.step = "review"
         job.progress = 1.0
         job.status = "succeeded"
         db.commit()
 
-        await broadcaster.broadcast(job.id, "step", {"job_id": job.id, "step": "pii", "progress": 1.0})
-        await broadcaster.broadcast(job.id, "done", {"job_id": job.id, "document_id": document_id})
+        await broadcaster.broadcast(job.id, "step", {"job_id": job.id, "step": "review", "progress": 1.0})
+        await broadcaster.broadcast(job.id, "done", {"job_id": job.id, "document_id": document_id, "status": "succeeded"})
 
 
 worker = JobWorker()

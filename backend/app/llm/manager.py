@@ -21,8 +21,11 @@ class ModelManager:
         else:
             self._config = {"default": "evolving", "models": {}}
 
-        # 优先使用 .env 中的配置覆盖模型 ID
+        # 优先使用 .env 中的配置覆盖模型 ID 与 base_url
         models = self._config.get("models", {})
+        for m in models.values():
+            if settings.ark_base_url:
+                m["base_url"] = settings.ark_base_url
         if "evolving" in models and settings.model_primary:
             models["evolving"]["model_id"] = settings.model_primary
         if "pro_0628" in models and settings.model_baseline:
@@ -66,15 +69,15 @@ class ModelManager:
         api_key = os.environ.get(api_key_env, settings.ark_api_key)
         display_name = conf.get("display_name", key)
 
-        if provider_name == "ark":
-            return ArkProvider(
+        if provider_name == "openai_compat":
+            from app.llm.openai_compat import OpenAICompatProvider
+            return OpenAICompatProvider(
                 model_id=model_id,
                 base_url=base_url,
                 api_key=api_key,
                 display_name=display_name,
             )
         else:
-            # Default to Ark or extend in M2
             return ArkProvider(
                 model_id=model_id,
                 base_url=base_url,
