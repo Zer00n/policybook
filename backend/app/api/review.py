@@ -30,6 +30,7 @@ router = APIRouter(prefix="/imports", tags=["review"])
 class FieldUpdatePayload(BaseModel):
     value: str | None = None
     status: str = "verified"
+    member_id: str | None = None
 
 
 @router.get("/{job_id}/review")
@@ -88,6 +89,8 @@ def update_review_field(
 
     target_field["value"] = payload.value
     target_field["status"] = payload.status
+    if payload.member_id is not None:
+        target_field["member_id"] = payload.member_id if payload.member_id != "" else None
     target_field["is_human_modified"] = True
     target_field["conflict_reason"] = None  # 人工确认后清除冲突原因
 
@@ -186,13 +189,36 @@ def confirm_review(job_id: str, db: Session = Depends(get_db)):
 
     # 关联成员映射
     members = db.query(Member).all()
-    placeholder_to_member = {m.placeholder: m for m in members}
+    placeholder_to_member = {m.placeholder: m for m in members if m.placeholder}
+    id_to_member = {m.id: m for m in members}
+
+    name_to_member = {}
+    from app.db.crypto import decrypt_str
+    for m in members:
+        if m.display_name:
+            name_to_member[m.display_name.strip()] = m
+        real = decrypt_str(m.real_name_enc)
+        if real:
+            name_to_member[real.strip()] = m
 
     def link_party(role_name: str, item_dict: dict, share_pct: int = 100):
-        if not item_dict or not item_dict.get("value"):
+        if not item_dict or not (item_dict.get("value") or item_dict.get("member_id")):
             return
-        val = item_dict["value"]
-        m = placeholder_to_member.get(val)
+
+        m = None
+        # 1. 优先使用人工显式绑定的 member_id
+        if item_dict.get("member_id"):
+            m = id_to_member.get(item_dict["member_id"])
+
+        val = str(item_dict.get("value") or "").strip()
+        # 2. 次选占位符精准匹配（例如 〔成员A〕）
+        if not m and val:
+            m = placeholder_to_member.get(val)
+
+        # 3. 再次尝试真实姓名或称谓兜底智能匹配
+        if not m and val:
+            m = name_to_member.get(val)
+
         party = PolicyParty(
             policy_id=policy.id,
             member_id=m.id if m else None,

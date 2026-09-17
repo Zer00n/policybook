@@ -1,6 +1,7 @@
 import json
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -286,6 +287,40 @@ def get_policy_detail(policy_id: str, db: Session = Depends(get_db)):
         "evidences": field_evs,
         "pages": pages_data,
     }
+
+
+class PartyItemPayload(BaseModel):
+    role: str  # applicant / insured / beneficiary
+    member_id: str | None = None
+    share: int | None = 100
+
+
+class UpdatePartiesPayload(BaseModel):
+    parties: list[PartyItemPayload]
+
+
+@router.put("/{policy_id}/parties")
+def update_policy_parties(
+    policy_id: str,
+    payload: UpdatePartiesPayload,
+    db: Session = Depends(get_db),
+):
+    """更新保单关联的关系人/家庭成员"""
+    policy = db.query(Policy).filter(Policy.id == policy_id).first()
+    if not policy:
+        raise HTTPException(status_code=404, detail="Policy not found")
+
+    db.query(PolicyParty).filter(PolicyParty.policy_id == policy.id).delete()
+    for item in payload.parties:
+        party = PolicyParty(
+            policy_id=policy.id,
+            role=item.role,
+            member_id=item.member_id,
+            share=item.share or 100,
+        )
+        db.add(party)
+    db.commit()
+    return {"ok": True, "policy_id": policy_id}
 
 
 @router.delete("/{policy_id}")

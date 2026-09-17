@@ -126,4 +126,34 @@ app.include_router(renewal_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
 app.include_router(eval_router, prefix="/api")
 
+# Serve frontend static assets if available (Docker /app/static or frontend/dist)
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+static_candidates = [
+    Path("/app/static"),
+    settings.project_root / "frontend" / "dist",
+]
+static_dir = next((p for p in static_candidates if p.exists() and (p / "index.html").exists()), None)
+
+if static_dir:
+    assets_dir = static_dir / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+
+    fonts_dir = static_dir / "fonts"
+    if fonts_dir.exists():
+        app.mount("/fonts", StaticFiles(directory=str(fonts_dir)), name="fonts")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        if full_path.startswith("api/") or full_path.startswith("calendar/"):
+            raise StarletteHTTPException(status_code=404, detail="Not Found")
+        target_file = static_dir / full_path
+        if target_file.is_file():
+            return FileResponse(target_file)
+        return FileResponse(static_dir / "index.html")
+
+
 

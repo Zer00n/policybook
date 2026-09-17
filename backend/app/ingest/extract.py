@@ -31,6 +31,7 @@ async def run_document_extraction(
     document_id: str,
     job: Job,
     on_step_callback=None,
+    on_log_callback=None,
 ) -> dict[str, Any]:
     """
     执行 PRD 3.3 步骤 5-10：
@@ -41,6 +42,10 @@ async def run_document_extraction(
     步骤 9: 数值一致性校验与冲突判定
     步骤 10: 组装核对草稿并标记 review_ready
     """
+    async def emit_log(msg: str, level: str = "info"):
+        if on_log_callback:
+            await on_log_callback(msg, level)
+
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
         raise ValueError(f"Document {document_id} not found")
@@ -79,7 +84,8 @@ async def run_document_extraction(
 
     # ==================== 步骤 5: 文档分类 ====================
     if on_step_callback:
-        await on_step_callback("classify", 0.88)
+        await on_step_callback("classify", 0.86)
+    await emit_log(f"提交 {len(pages)} 页脱敏页面摘要至火山方舟大模型执行页面分类...")
 
     classify_tmpl = _read_prompt_template("classify_pages.md")
     pages_summary_lines = []
@@ -97,12 +103,19 @@ async def run_document_extraction(
             output_schema=PageTypes,
         )
         page_types_obj: PageTypes = classify_res.parsed or PageTypes()
+        await emit_log(
+            f"页面分类完成：识别出主险合同 {len(page_types_obj.policy_pages)} 页，"
+            f"保险责任条款 {len(page_types_obj.liability_pages)} 页，"
+            f"免责条款 {len(page_types_obj.exclusion_pages)} 页"
+        )
     except Exception as e:
         page_types_obj = PageTypes()
+        await emit_log(f"页面分类提示：分类模型调用异常 ({e})，使用全页备选策略", level="warn")
 
     # ==================== 步骤 6: 字段抽取 ====================
     if on_step_callback:
-        await on_step_callback("extract_policy", 0.92)
+        await on_step_callback("extract_policy", 0.90)
+    await emit_log("调用火山方舟大模型抽取保单核心基本信息（险种、投保人、被保人、保费保额、起止日期）...")
 
     policy_tmpl = _read_prompt_template("extract_policy.md")
     # 组装保单文本（限制适量长度）
@@ -120,12 +133,18 @@ async def run_document_extraction(
             output_schema=PolicyExtraction,
         )
         policy_data: PolicyExtraction = policy_res.parsed or PolicyExtraction()
+        p_name = policy_data.product_name.value if policy_data.product_name else "未知险种"
+        p_ins = policy_data.insurer.value if policy_data.insurer else "未知保司"
+        p_si = policy_data.sum_insured.value if policy_data.sum_insured else "未标明"
+        await emit_log(f"基本信息抽取完成：{p_ins}《{p_name}》，基本保额: {p_si}")
     except Exception as e:
         policy_data = PolicyExtraction()
+        await emit_log(f"基本信息抽取提示：模型抽取异常 ({e})", level="warn")
 
     # ==================== 步骤 7: 责任项抽取 ====================
     if on_step_callback:
-        await on_step_callback("extract_coverages", 0.95)
+        await on_step_callback("extract_coverages", 0.94)
+    await emit_log("调用火山方舟大模型抽取保障责任清单、赔付比例与免责条款...")
 
     cov_tmpl = _read_prompt_template("extract_coverages.md")
     cov_prompt = cov_tmpl.render(pages_content=policy_content_str)
@@ -137,12 +156,15 @@ async def run_document_extraction(
             output_schema=CoverageExtraction,
         )
         cov_data: CoverageExtraction = cov_res.parsed or CoverageExtraction()
+        await emit_log(f"责任与免责条款抽取完成：共提取 {len(cov_data.coverages)} 项保障责任，{len(cov_data.exclusions)} 条责任免除")
     except Exception as e:
         cov_data = CoverageExtraction()
+        await emit_log(f"责任与免责条款抽取提示：模型抽取异常 ({e})", level="warn")
 
     # ==================== 步骤 8 & 9: 引用精确校验与数值核对 ====================
     if on_step_callback:
-        await on_step_callback("verify_and_resolve", 0.98)
+        await on_step_callback("verify", 0.98)
+    await emit_log("执行引用精确子串校验、原文坐标回算与数值一致性判定...")
 
     review_fields = {}
     conflict_count = 0
@@ -306,5 +328,11 @@ async def run_document_extraction(
             "conflict_count": conflict_count,
         },
     }
+
+    await emit_log(
+        f"核验完成：已核验 {verified_count} 项，待确认 {unverified_count} 项，"
+        f"未找到依据 {not_found_count} 项，冲突 {conflict_count} 项"
+    )
+    await emit_log("核对草稿已组装就绪，可以前往核对入库！", level="success")
 
     return review_draft

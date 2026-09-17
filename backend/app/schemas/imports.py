@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 from pydantic import BaseModel
 
 
@@ -13,6 +14,27 @@ class JobResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+
+class JobLogItem(BaseModel):
+    timestamp: str
+    level: str = "info"
+    message: str
+
+
+class ActiveJobItem(BaseModel):
+    job_id: str
+    document_id: str | None = None
+    filename: str
+    step: str
+    progress: float
+    status: str
+    error: str | None = None
+    logs: list[dict[str, Any]] = []
+    created_at: datetime | None = None
+
+
+class ActiveJobsResponse(BaseModel):
+    jobs: list[ActiveJobItem]
 
 
 class UploadItem(BaseModel):

@@ -32,7 +32,8 @@ try {
 }
 finally {
     Write-Host "正在停止前后端服务..." -ForegroundColor Yellow
-    Stop-Process -Id $BackendJob.Id -ErrorAction SilentlyContinue
-    Stop-Process -Id $FrontendJob.Id -ErrorAction SilentlyContinue
+    taskkill /F /T /PID $BackendJob.Id 2>$null | Out-Null
+    taskkill /F /T /PID $FrontendJob.Id 2>$null | Out-Null
     Write-Host "服务已停止。" -ForegroundColor Gray
 }
+

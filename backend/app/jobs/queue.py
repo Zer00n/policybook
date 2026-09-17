@@ -115,6 +115,8 @@ class JobWorker:
             db.close()
 
     async def _run_import_pipeline(self, db: Session, job: Job, payload: dict):
+        from datetime import datetime
+
         document_id = payload.get("document_id")
         file_path_str = payload.get("file_path")
         doc_dir_str = payload.get("doc_dir")
@@ -125,10 +127,22 @@ class JobWorker:
         file_path = Path(file_path_str)
         doc_dir = Path(doc_dir_str)
 
+        logs: list[dict] = payload.get("logs", [])
+
+        async def log_step(text: str, level: str = "info"):
+            now_str = datetime.now().strftime("%H:%M:%S")
+            entry = {"timestamp": now_str, "level": level, "message": text}
+            logs.append(entry)
+            payload["logs"] = logs
+            job.payload_json = json.dumps(payload, ensure_ascii=False)
+            db.commit()
+            await broadcaster.broadcast(job.id, "log", entry)
+
         # 步骤 1: 计算文件哈希
-        await broadcaster.broadcast(job.id, "step", {"job_id": job.id, "step": "hash_check", "progress": 0.1})
+        await log_step(f"开始处理保单文件: {file_path.name}")
+        await broadcaster.broadcast(job.id, "step", {"job_id": job.id, "step": "hash_check", "progress": 0.05})
         job.step = "hash_check"
-        job.progress = 0.1
+        job.progress = 0.05
         db.commit()
 
         hasher = hashlib.sha256()
@@ -141,11 +155,13 @@ class JobWorker:
         if doc:
             doc.sha256 = sha256_val
             db.commit()
+        await log_step(f"文件哈希校验完成 (SHA-256: {sha256_val[:16]}...)")
 
         # 步骤 2: 页面渲染与字符坐标提取 (PyMuPDF)
-        await broadcaster.broadcast(job.id, "step", {"job_id": job.id, "step": "render", "progress": 0.3})
+        await log_step("启动 PyMuPDF 引擎进行 144 DPI 页面渲染与字符坐标提取...")
+        await broadcaster.broadcast(job.id, "step", {"job_id": job.id, "step": "render", "progress": 0.20})
         job.step = "render"
-        job.progress = 0.3
+        job.progress = 0.20
         db.commit()
 
         rendered_pages = await asyncio.to_thread(render_file_to_pages, file_path, doc_dir)
@@ -169,26 +185,35 @@ class JobWorker:
         if doc:
             doc.page_count = len(rendered_pages)
         db.commit()
+        await log_step(f"页面渲染完成：共解析 {len(rendered_pages)} 页并提取文字与字符级坐标")
 
         # 步骤 3: 扫描判定与 OCR 识别
-        await broadcaster.broadcast(job.id, "step", {"job_id": job.id, "step": "ocr", "progress": 0.6})
+        await broadcaster.broadcast(job.id, "step", {"job_id": job.id, "step": "ocr", "progress": 0.45})
         job.step = "ocr"
-        job.progress = 0.6
+        job.progress = 0.45
         db.commit()
 
-        for p, rp in zip(pages_db, rendered_pages):
-            if p.is_ocr:
-                ocr_text = await asyncio.to_thread(ocr_page, rp.image_path, rp.char_map_path)
-                p.text_raw_enc = encrypt_str(ocr_text)
-                rp.raw_text = ocr_text
+        ocr_needed_pages = [p for p in pages_db if p.is_ocr]
+        if ocr_needed_pages:
+            await log_step(f"检测到 {len(ocr_needed_pages)} 页扫描件/图片，启动 RapidOCR 本地引擎逐页识别...")
+            for idx, p in enumerate(pages_db):
+                if p.is_ocr:
+                    rp = rendered_pages[idx]
+                    ocr_text = await asyncio.to_thread(ocr_page, rp.image_path, rp.char_map_path)
+                    p.text_raw_enc = encrypt_str(ocr_text)
+                    rp.raw_text = ocr_text
+                    await log_step(f"第 {p.page_no} 页 OCR 识别完成 ({len(ocr_text)} 字符)")
+        else:
+            await log_step("文档为原生数字化 PDF，全部页面包含文本流，跳过 OCR 识别")
         db.commit()
 
         # 步骤 4: 本地脱敏与打码
-        await broadcaster.broadcast(job.id, "step", {"job_id": job.id, "step": "pii", "progress": 0.85})
+        await broadcaster.broadcast(job.id, "step", {"job_id": job.id, "step": "pii", "progress": 0.65})
         job.step = "pii"
-        job.progress = 0.85
+        job.progress = 0.65
         db.commit()
 
+        await log_step("加载本地已登记家庭成员信息与脱敏规则库...")
         # 读取已登记家庭成员真实姓名进行匹配
         members = db.query(Member).all()
         registered_members = []
@@ -199,6 +224,7 @@ class JobWorker:
 
         deidentifier = PiiDeidentifier(registered_members)
 
+        total_masked_count = 0
         for p, rp in zip(pages_db, rendered_pages):
             raw_text = decrypt_str(p.text_raw_enc) or ""
             res = deidentifier.deidentify_text(raw_text)
@@ -209,6 +235,7 @@ class JobWorker:
             p.masked_image_path = str(masked_img_path.resolve())
             p.text_masked = res.masked_text
             p.pii_status = res.pii_status
+            total_masked_count += len(res.mappings)
 
         # 保存 mappings 到 pii_mapping（先清理旧记录保持幂等）
         db.query(PiiMapping).filter(PiiMapping.document_id == document_id).delete()
@@ -224,6 +251,7 @@ class JobWorker:
                 )
                 db.add(mapping)
         db.commit()
+        await log_step(f"本地脱敏完成：共对 {len(pages_db)} 页生成视觉遮盖图，识别脱敏 {total_masked_count} 处敏感实体")
 
         # 步骤 5-10: 页面分类、字段抽取、责任项抽取、引用精确校验与草稿核对
         from app.ingest.extract import run_document_extraction
@@ -234,7 +262,13 @@ class JobWorker:
             db.commit()
             await broadcaster.broadcast(job.id, "step", {"job_id": job.id, "step": step_name, "progress": prog})
 
-        review_draft = await run_document_extraction(db, document_id, job, on_step_callback=step_callback)
+        review_draft = await run_document_extraction(
+            db,
+            document_id,
+            job,
+            on_step_callback=step_callback,
+            on_log_callback=log_step,
+        )
 
         payload["review_data"] = review_draft
         job.payload_json = json.dumps(payload, ensure_ascii=False)

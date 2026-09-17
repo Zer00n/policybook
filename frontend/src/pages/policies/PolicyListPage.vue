@@ -49,7 +49,7 @@ const statusTabs = [
 
 async function fetchMembers() {
   try {
-    const res = await fetch('http://localhost:8000/api/members')
+    const res = await fetch('/api/members')
     if (res.ok) {
       members.value = await res.json()
     }
@@ -67,7 +67,7 @@ async function fetchPolicies() {
       params.set('status', selectedStatus.value)
     }
 
-    const res = await fetch(`http://localhost:8000/api/policies?${params.toString()}`)
+    const res = await fetch(`/api/policies?${params.toString()}`)
     if (res.ok) {
       const data = await res.json()
       policies.value = data.items || []
@@ -209,11 +209,19 @@ function getStatusBadge(st: string) {
     </div>
     <div v-else-if="policies.length === 0" class="empty-state glass">
       <ShieldCheck :size="48" class="empty-icon" />
-      <h3 class="empty-title">暂无匹配保单</h3>
-      <p class="empty-desc">你可以拖拽上传保单 PDF 或扫描件建档</p>
-      <button class="btn-primary" @click="router.push('/import')">
-        <Plus :size="16" /> 立即上传
-      </button>
+      <h3 class="empty-title">家庭保单库暂无保单</h3>
+      <p class="empty-desc">
+        若您刚刚上传了保单文件，请先前往<strong>【保单上传与建档】</strong>页面核对提取字段并点击<strong>【确认入库】</strong>。<br />
+        您也可以先前往<strong>【家庭成员】</strong>登记家人信息，方便后续保单按人归档。
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button class="btn-primary" @click="router.push('/import')">
+          <Plus :size="16" /> 前往保单建档 / 核对草稿
+        </button>
+        <button class="btn-secondary" @click="router.push('/members')">
+          <User :size="16" /> 查看家庭成员
+        </button>
+      </div>
     </div>
 
     <!-- 1. 卡片视图 -->

@@ -68,7 +68,7 @@ class ArkProvider(LLMProvider):
         base_url: str,
         api_key: str,
         display_name: str = "",
-        timeout: float = 120.0,
+        timeout: float = 300.0,
     ):
         self.name = "ark"
         self.model_id = model_id
@@ -198,7 +198,7 @@ class ArkProvider(LLMProvider):
         for attempt in range(3):
             start_time = time.perf_counter()
             try:
-                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                async with httpx.AsyncClient(timeout=httpx.Timeout(self.timeout, connect=60.0)) as client:
                     resp = await client.post(endpoint, json=payload, headers=headers)
                     latency_ms = int((time.perf_counter() - start_time) * 1000)
 

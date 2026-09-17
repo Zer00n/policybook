@@ -85,8 +85,62 @@ async function fetchPolicyDetail() {
   }
 }
 
+const members = ref<any[]>([])
+const editPartiesModalOpen = ref(false)
+const editingApplicantId = ref<string | null>(null)
+const editingInsuredId = ref<string | null>(null)
+const updatingParties = ref(false)
+
+async function fetchMembers() {
+  try {
+    const res = await fetch('/api/members')
+    if (res.ok) {
+      members.value = await res.json()
+    }
+  } catch {}
+}
+
+function openEditPartiesModal() {
+  editingApplicantId.value = applicantParty.value?.member_id || null
+  editingInsuredId.value = insuredMembers.value[0]?.member_id || null
+  editPartiesModalOpen.value = true
+}
+
+async function savePolicyParties() {
+  updatingParties.value = true
+  try {
+    const partiesPayload = []
+    if (editingApplicantId.value) {
+      partiesPayload.push({ role: 'applicant', member_id: editingApplicantId.value, share: 100 })
+    }
+    if (editingInsuredId.value) {
+      partiesPayload.push({ role: 'insured', member_id: editingInsuredId.value, share: 100 })
+    }
+    for (const ben of beneficiaryParties.value) {
+      partiesPayload.push({ role: 'beneficiary', member_id: ben.member_id, share: ben.share || 100 })
+    }
+
+    const res = await fetch(`/api/policies/${policyId.value}/parties`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ parties: partiesPayload }),
+    })
+    if (res.ok) {
+      editPartiesModalOpen.value = false
+      await fetchPolicyDetail()
+    } else {
+      alert('保存成员关联失败')
+    }
+  } catch {
+    alert('网络请求异常')
+  } finally {
+    updatingParties.value = false
+  }
+}
+
 onMounted(() => {
   fetchPolicyDetail()
+  fetchMembers()
 })
 
 function formatMoney(cents?: number) {
@@ -334,6 +388,10 @@ const beneficiaryParties = computed(() => {
                 {{ ben.display_name }} ({{ ben.share || 100 }}%)
               </span>
             </div>
+
+            <button class="btn-secondary btn-small bind-member-btn" @click="openEditPartiesModal" style="margin-top: 6px;">
+              <User :size="13" /> 变更归属成员
+            </button>
           </div>
 
           <!-- 关键数值指标网格 (4格) -->
@@ -597,6 +655,61 @@ const beneficiaryParties = computed(() => {
             @click="confirmDeletePolicy"
           >
             {{ deleting ? '正在删除...' : '确认删除' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 关联家庭成员模态框 -->
+    <div
+      v-if="editPartiesModalOpen"
+      class="modal-overlay"
+      @click.self="editPartiesModalOpen = false"
+    >
+      <div class="modal-dialog glass" style="max-width: 440px;">
+        <h3 class="modal-title">关联保单归属家庭成员</h3>
+        <p class="modal-desc">
+          选择该保单归属的被保险人与投保人，保单将自动归集到对应成员名下汇总保额与保费。
+        </p>
+
+        <div class="form-group" style="margin-bottom: 16px; text-align: left;">
+          <label style="display: block; font-size: 13px; margin-bottom: 6px; color: var(--text-muted); font-weight: 500;">
+            被保险人
+          </label>
+          <select
+            v-model="editingInsuredId"
+            style="width: 100%; padding: 8px 12px; border-radius: var(--r-control); border: 1px solid var(--glass-stroke); background: var(--c-paper); color: var(--text); font-size: 14px;"
+          >
+            <option :value="null">未指定 (不关联具体成员)</option>
+            <option v-for="m in members" :key="m.id" :value="m.id">
+              {{ m.display_name }} ({{ m.placeholder }})
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 24px; text-align: left;">
+          <label style="display: block; font-size: 13px; margin-bottom: 6px; color: var(--text-muted); font-weight: 500;">
+            投保人
+          </label>
+          <select
+            v-model="editingApplicantId"
+            style="width: 100%; padding: 8px 12px; border-radius: var(--r-control); border: 1px solid var(--glass-stroke); background: var(--c-paper); color: var(--text); font-size: 14px;"
+          >
+            <option :value="null">未指定 (不关联具体成员)</option>
+            <option v-for="m in members" :key="m.id" :value="m.id">
+              {{ m.display_name }} ({{ m.placeholder }})
+            </option>
+          </select>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-cancel" @click="editPartiesModalOpen = false">取消</button>
+          <button
+            class="btn-primary"
+            :disabled="updatingParties"
+            @click="savePolicyParties"
+          >
+            {{ updatingParties ? '保存中...' : '保存关联' }}
           </button>
         </div>
       </div>

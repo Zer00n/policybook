@@ -51,7 +51,7 @@ async function fetchReview() {
   loading.value = true
   errorMsg.value = ''
   try {
-    const res = await fetch(`http://localhost:8000/api/imports/${jobId.value}/review`)
+    const res = await fetch(`/api/imports/${jobId.value}/review`)
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
       throw new Error(err.error?.message || '获取核对数据失败')
@@ -65,10 +65,49 @@ async function fetchReview() {
   }
 }
 
+const members = ref<any[]>([])
+
+async function fetchMembers() {
+  try {
+    const res = await fetch('/api/members')
+    if (res.ok) {
+      members.value = await res.json()
+    }
+  } catch (err) {
+    console.error('获取家庭成员列表失败:', err)
+  }
+}
+
+async function onPartyMemberChange(fieldKey: string, partyItem: any) {
+  try {
+    const res = await fetch(
+      `/api/imports/${jobId.value}/review/fields/${fieldKey}`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          value: partyItem.value,
+          status: partyItem.status || 'verified',
+          member_id: partyItem.member_id || null,
+        }),
+      }
+    )
+    if (res.ok) {
+      const data = await res.json()
+      if (data.summary) {
+        reviewData.value.summary = data.summary
+      }
+    }
+  } catch (err) {
+    console.error('更新关系人失败:', err)
+  }
+}
+
 onMounted(() => {
   if (jobId.value) {
     fetchReview()
   }
+  fetchMembers()
 })
 
 // 字段点击高亮定位 (FLIP)
@@ -97,7 +136,7 @@ async function saveFieldEdit() {
   if (!editModal.value.fieldKey) return
   try {
     const res = await fetch(
-      `http://localhost:8000/api/imports/${jobId.value}/review/fields/${editModal.value.fieldKey}`,
+      `/api/imports/${jobId.value}/review/fields/${editModal.value.fieldKey}`,
       {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -134,7 +173,7 @@ async function confirmReview() {
   }
   submitting.value = true
   try {
-    const res = await fetch(`http://localhost:8000/api/imports/${jobId.value}/confirm`, {
+    const res = await fetch(`/api/imports/${jobId.value}/confirm`, {
       method: 'POST',
     })
     if (res.ok) {
@@ -311,6 +350,17 @@ function getStatusBadge(status: string) {
 
           <!-- 2. 关系人面板 -->
           <div v-if="activeTab === 'parties'" class="fields-list">
+            <!-- 成员绑定引导提示 -->
+            <div class="info-callout glass-subtle">
+              <Users :size="16" class="text-ok" />
+              <div class="callout-text">
+                在此为保单指定归属的家庭成员。若家人尚未登记，可点击
+                <a href="/members" target="_blank" class="link-text">【家庭成员】</a>
+                新增，方便后续按人集中管理。
+              </div>
+            </div>
+
+            <!-- 投保人卡片 -->
             <div
               v-if="reviewData?.parties?.applicant"
               class="field-card glass-subtle"
@@ -318,22 +368,49 @@ function getStatusBadge(status: string) {
             >
               <div class="field-top">
                 <span class="field-label">投保人</span>
-                <span
-                  class="status-badge"
-                  :class="getStatusBadge(reviewData.parties.applicant.status).class"
-                >
-                  {{ getStatusBadge(reviewData.parties.applicant.status).text }}
-                </span>
+                <div class="field-meta">
+                  <span
+                    class="status-badge"
+                    :class="getStatusBadge(reviewData.parties.applicant.status).class"
+                  >
+                    {{ getStatusBadge(reviewData.parties.applicant.status).text }}
+                  </span>
+                  <button
+                    class="edit-icon-btn"
+                    @click.stop="openEditModal('applicant', reviewData.parties.applicant)"
+                    title="人工核对修改"
+                  >
+                    <Edit2 :size="13" />
+                  </button>
+                </div>
               </div>
               <div class="field-value-line">
-                <span class="field-val">{{ reviewData.parties.applicant.value }}</span>
+                <span class="field-val">{{ reviewData.parties.applicant.value || '未提取' }}</span>
+                <span v-if="reviewData.parties.applicant.is_human_modified" class="human-tag">人工修改</span>
               </div>
+
+              <!-- 关联家庭成员下拉框 -->
+              <div class="member-bind-row" @click.stop>
+                <label class="bind-label">关联家庭成员：</label>
+                <select
+                  v-model="reviewData.parties.applicant.member_id"
+                  class="member-select"
+                  @change="onPartyMemberChange('applicant', reviewData.parties.applicant)"
+                >
+                  <option :value="null">未指定成员 (按原值记录)</option>
+                  <option v-for="m in members" :key="m.id" :value="m.id">
+                    {{ m.display_name }} ({{ m.placeholder }})
+                  </option>
+                </select>
+              </div>
+
               <div v-if="reviewData.parties.applicant.quote" class="quote-card">
                 <div class="quote-text font-serif">{{ reviewData.parties.applicant.quote }}</div>
                 <div class="quote-footer">第 {{ reviewData.parties.applicant.page_no || 1 }} 页</div>
               </div>
             </div>
 
+            <!-- 被保险人卡片列表 -->
             <div
               v-for="(ins, idx) in reviewData?.parties?.insureds || []"
               :key="idx"
@@ -342,13 +419,39 @@ function getStatusBadge(status: string) {
             >
               <div class="field-top">
                 <span class="field-label">被保险人 {{ idx + 1 }}</span>
-                <span class="status-badge" :class="getStatusBadge(ins.status).class">
-                  {{ getStatusBadge(ins.status).text }}
-                </span>
+                <div class="field-meta">
+                  <span class="status-badge" :class="getStatusBadge(ins.status).class">
+                    {{ getStatusBadge(ins.status).text }}
+                  </span>
+                  <button
+                    class="edit-icon-btn"
+                    @click.stop="openEditModal(ins.key || `insured_${idx+1}`, ins)"
+                    title="人工核对修改"
+                  >
+                    <Edit2 :size="13" />
+                  </button>
+                </div>
               </div>
               <div class="field-value-line">
-                <span class="field-val">{{ ins.value }}</span>
+                <span class="field-val">{{ ins.value || '未提取' }}</span>
+                <span v-if="ins.is_human_modified" class="human-tag">人工修改</span>
               </div>
+
+              <!-- 关联家庭成员下拉框 -->
+              <div class="member-bind-row" @click.stop>
+                <label class="bind-label">关联家庭成员：</label>
+                <select
+                  v-model="ins.member_id"
+                  class="member-select"
+                  @change="onPartyMemberChange(ins.key || `insured_${idx+1}`, ins)"
+                >
+                  <option :value="null">未指定成员 (按原值记录)</option>
+                  <option v-for="m in members" :key="m.id" :value="m.id">
+                    {{ m.display_name }} ({{ m.placeholder }})
+                  </option>
+                </select>
+              </div>
+
               <div v-if="ins.quote" class="quote-card">
                 <div class="quote-text font-serif">{{ ins.quote }}</div>
                 <div class="quote-footer">第 {{ ins.page_no || 1 }} 页</div>
@@ -639,6 +742,58 @@ function getStatusBadge(status: string) {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.info-callout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--r-control);
+  font-size: var(--fs-13);
+  color: var(--text-muted);
+  border: 1px dashed var(--glass-stroke);
+  background: var(--glass-fill-strong);
+}
+
+.callout-text {
+  line-height: 1.4;
+}
+
+.link-text {
+  color: var(--ok);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.member-bind-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--glass-stroke);
+}
+
+.bind-label {
+  font-size: var(--fs-12);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.member-select {
+  padding: 4px 10px;
+  border-radius: var(--r-control);
+  border: 1px solid var(--glass-stroke);
+  background: var(--c-paper);
+  color: var(--text);
+  font-size: var(--fs-12);
+  outline: none;
+  cursor: pointer;
+}
+
+.member-select:focus {
+  border-color: var(--ok);
 }
 
 .field-card {

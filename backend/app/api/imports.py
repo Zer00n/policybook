@@ -9,7 +9,13 @@ from ulid import ULID
 from app.db.models import Document, Job
 from app.db.session import get_db
 from app.jobs.events import job_event_generator
-from app.schemas.imports import JobResponse, UploadItem, UploadResponse
+from app.schemas.imports import (
+    ActiveJobItem,
+    ActiveJobsResponse,
+    JobResponse,
+    UploadItem,
+    UploadResponse,
+)
 from app.settings import settings
 
 router = APIRouter(tags=["Imports & Jobs"])
@@ -71,6 +77,39 @@ async def upload_policies(
     return UploadResponse(jobs=upload_items)
 
 
+@router.get("/jobs/active", response_model=ActiveJobsResponse)
+def get_active_jobs(db: Session = Depends(get_db)):
+    """获取正在进行或最近完成的任务，支持页面刷新后自动重连"""
+    jobs = (
+        db.query(Job)
+        .filter(Job.kind == "import")
+        .order_by(Job.created_at.desc())
+        .limit(10)
+        .all()
+    )
+    items = []
+    for j in jobs:
+        payload = json.loads(j.payload_json or "{}")
+        doc_id = payload.get("document_id")
+        doc = db.query(Document).filter(Document.id == doc_id).first() if doc_id else None
+        filename = doc.original_name if doc else (Path(payload.get("file_path", "")).name or "policy.pdf")
+
+        items.append(
+            ActiveJobItem(
+                job_id=j.id,
+                document_id=doc_id,
+                filename=filename,
+                step=j.step,
+                progress=j.progress,
+                status=j.status,
+                error=j.error,
+                logs=payload.get("logs", []),
+                created_at=j.created_at,
+            )
+        )
+    return ActiveJobsResponse(jobs=items)
+
+
 @router.get("/jobs/{job_id}", response_model=JobResponse)
 def get_job_status(job_id: str, db: Session = Depends(get_db)):
     job = db.query(Job).filter(Job.id == job_id).first()
@@ -85,8 +124,24 @@ async def stream_job_events(job_id: str, db: Session = Depends(get_db)):
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
+    payload = json.loads(job.payload_json or "{}")
+    doc_id = payload.get("document_id")
+    doc = db.query(Document).filter(Document.id == doc_id).first() if doc_id else None
+    filename = doc.original_name if doc else (Path(payload.get("file_path", "")).name or "policy.pdf")
+
+    snapshot = {
+        "job_id": job.id,
+        "document_id": doc_id,
+        "filename": filename,
+        "status": job.status,
+        "step": job.step,
+        "progress": job.progress,
+        "error": job.error,
+        "logs": payload.get("logs", []),
+    }
+
     return StreamingResponse(
-        job_event_generator(job_id),
+        job_event_generator(job_id, initial_snapshot=snapshot),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
