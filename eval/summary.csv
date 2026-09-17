@@ -1,3 +1,0 @@
-﻿run_id,suite,model_alias,model_id,seed,git_commit,prompt_version,total_tasks,passed_tasks,pass_rate,verdict_accuracy,quote_accuracy,avg_tokens,avg_latency_ms,created_at
-e3_qa_baseline_20260916_081259,e3_qa,baseline,deepseek-v4-flash,20260915,176cc08,v1.0,20,17,85.0%,90.0%,90.0%,903.1,6350.8,2026-09-16T08:12:59.963177+00:00
-e3_qa_evolving_20260916_081338,e3_qa,evolving,doubao-seed-evolving,20260915,176cc08,v1.0,20,20,100.0%,100.0%,100.0%,0.0,25003.1,2026-09-16T08:13:38.580627+00:00

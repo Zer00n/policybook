@@ -5,8 +5,19 @@
 # Data & Models
 data/
 models/
-eval/private/
-eval/runs/
+
+# 项目与测试文档：只在本地保留，不纳入仓库同步
+/docs/
+/eval/
+/AGENTS.md
+/CLAUDE.md
+
+# 测试与素材类脚本：保留 start / reset_data，其余不纳入同步
+/scripts/dev.*
+/scripts/prepare_*_data.py
+/scripts/screenshot_*.mjs
+/scripts/verify_prd_completeness.py
+/scripts/eval_ab.*
 
 # Python
 __pycache__/
