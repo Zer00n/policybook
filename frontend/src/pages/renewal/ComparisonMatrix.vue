@@ -133,7 +133,7 @@ defineProps<{
 .matrix-container {
   background: var(--glass-fill);
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-panel);
+  border-radius: var(--r-panel);
   padding: var(--sp-4);
   backdrop-filter: blur(var(--glass-blur));
   margin: var(--sp-4) 0;
@@ -167,7 +167,7 @@ defineProps<{
   color: var(--c-celadon);
   background: color-mix(in oklch, var(--c-celadon) 12%, transparent);
   padding: 2px 8px;
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
 }
 
 .table-scroll-wrapper {
@@ -177,7 +177,7 @@ defineProps<{
 .comparison-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   text-align: left;
 }
 
@@ -212,7 +212,7 @@ th, td {
   background: var(--c-apricot);
   color: white;
   padding: 1px 6px;
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   font-weight: 500;
 }
 
@@ -221,7 +221,7 @@ th, td {
   background: var(--c-celadon);
   color: white;
   padding: 1px 6px;
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   font-weight: 500;
 }
 
@@ -234,6 +234,7 @@ th, td {
 .prod-premium {
   font-size: 11px;
   color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .prod-url {
@@ -273,7 +274,7 @@ th, td {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   font-weight: 500;
 }
 

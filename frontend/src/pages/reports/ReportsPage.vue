@@ -11,7 +11,7 @@
     </header>
 
     <!-- Main Generator Card -->
-    <div class="generator-card glass-panel">
+    <div class="generator-card glass">
       <div class="card-header">
         <div class="header-icon">
           <Presentation class="icon-lg" />
@@ -102,7 +102,7 @@
     </div>
 
     <!-- PPT Preview Layout Structure -->
-    <div class="preview-section glass-panel">
+    <div class="preview-section glass">
       <h2 class="section-title">报告包含的标准 16:9 版式结构</h2>
       <div class="slide-deck-preview">
         <div class="slide-card">
@@ -156,7 +156,7 @@
     </div>
 
     <!-- History Reports List -->
-    <div class="history-section glass-panel">
+    <div class="history-section glass">
       <div class="history-header">
         <h2 class="section-title">已生成的报告历史</h2>
         <button class="btn-text" @click="fetchReports">刷新列表</button>
@@ -315,31 +315,23 @@ onMounted(() => {
 }
 
 .page-title {
-  font-size: var(--text-2xl);
+  font-size: var(--fs-28);
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text);
   margin-bottom: var(--sp-2);
 }
 
 .page-subtitle {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
+  font-size: var(--fs-14);
+  color: var(--text-muted);
   line-height: 1.6;
-}
-
-.glass-panel {
-  background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: var(--sp-6);
 }
 
 .generator-card {
   display: flex;
   flex-direction: column;
   gap: var(--sp-5);
+  padding: var(--sp-6);
 }
 
 .card-header {
@@ -351,9 +343,9 @@ onMounted(() => {
 .header-icon {
   width: 44px;
   height: 44px;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-control);
   background: rgba(42, 143, 130, 0.1);
-  color: var(--color-primary);
+  color: var(--ok);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -361,14 +353,14 @@ onMounted(() => {
 }
 
 .section-title {
-  font-size: var(--text-lg);
+  font-size: var(--fs-19);
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .section-desc {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
+  font-size: var(--fs-14);
+  color: var(--text-muted);
   margin-top: var(--sp-1);
 }
 
@@ -379,26 +371,30 @@ onMounted(() => {
 }
 
 .form-label {
-  font-size: var(--text-sm);
+  font-size: var(--fs-14);
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .text-input {
   width: 100%;
   padding: var(--sp-3);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  background: var(--bg-canvas);
-  color: var(--text-primary);
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--r-control);
+  background: var(--bg);
+  color: var(--text);
   font-family: inherit;
-  font-size: var(--text-sm);
+  font-size: var(--fs-14);
   resize: vertical;
-  outline: none;
 }
 
 .text-input:focus {
-  border-color: var(--color-primary);
+  border-color: var(--ok);
+}
+
+.text-input:focus-visible {
+  outline: 2px solid var(--ok);
+  outline-offset: 2px;
 }
 
 .actions-row {
@@ -411,12 +407,12 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  background: var(--color-primary);
+  background: var(--ok);
   color: #ffffff;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--r-control);
   padding: var(--sp-3) var(--sp-6);
-  font-size: var(--text-sm);
+  font-size: var(--fs-14);
   font-weight: 600;
   cursor: pointer;
 }
@@ -430,7 +426,7 @@ onMounted(() => {
   display: flex;
   gap: var(--sp-4);
   padding: var(--sp-5);
-  border-radius: var(--radius-md);
+  border-radius: var(--r-control);
   border: 1px solid;
 }
 
@@ -450,11 +446,11 @@ onMounted(() => {
 }
 
 .status-success {
-  color: var(--color-success);
+  color: var(--ok);
 }
 
 .status-warning {
-  color: #ea580c;
+  color: var(--pending);
 }
 
 .alert-content {
@@ -471,31 +467,31 @@ onMounted(() => {
 }
 
 .alert-title {
-  font-size: var(--text-base);
+  font-size: var(--fs-16);
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .badge {
-  font-size: var(--text-xs);
+  font-size: var(--fs-12);
   padding: var(--sp-1) var(--sp-2);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-control);
   font-weight: 600;
 }
 
 .badge-success {
   background: rgba(42, 143, 130, 0.15);
-  color: var(--color-success);
+  color: var(--ok);
 }
 
 .badge-warning {
-  background: rgba(234, 88, 12, 0.15);
-  color: #ea580c;
+  background: color-mix(in oklch, var(--pending) 15%, transparent);
+  color: var(--pending);
 }
 
 .alert-desc {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
+  font-size: var(--fs-14);
+  color: var(--text-muted);
 }
 
 .stats-snapshot-grid {
@@ -506,24 +502,25 @@ onMounted(() => {
 }
 
 .snap-item {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
+  background: var(--glass-fill-strong);
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--r-control);
   padding: var(--sp-2) var(--sp-3);
   display: flex;
   flex-direction: column;
 }
 
 .snap-label {
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
 }
 
 .snap-val {
-  font-size: var(--text-sm);
+  font-size: var(--fs-14);
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text);
   margin-top: var(--sp-1);
+  font-variant-numeric: tabular-nums;
 }
 
 .alert-actions {
@@ -534,12 +531,12 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  background: var(--color-primary);
+  background: var(--ok);
   color: #ffffff;
   padding: var(--sp-2) var(--sp-4);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-control);
   text-decoration: none;
-  font-size: var(--text-sm);
+  font-size: var(--fs-14);
   font-weight: 500;
 }
 
@@ -547,6 +544,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
+  padding: var(--sp-6);
 }
 
 .slide-deck-preview {
@@ -564,8 +562,8 @@ onMounted(() => {
 .slide-screen {
   aspect-ratio: 16 / 9;
   background: #f8faf9;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--r-control);
   padding: var(--sp-2);
   display: flex;
   flex-direction: column;
@@ -581,19 +579,19 @@ onMounted(() => {
   top: 8px;
   bottom: 8px;
   width: 3px;
-  background: var(--color-primary);
+  background: var(--ok);
   border-radius: 2px;
 }
 
 .slide-title-mock {
-  font-size: var(--text-xs);
+  font-size: var(--fs-12);
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .slide-sub-mock {
   font-size: 10px;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
@@ -608,7 +606,7 @@ onMounted(() => {
 .mock-cell {
   font-size: 9px;
   background: rgba(42, 143, 130, 0.1);
-  color: var(--color-primary);
+  color: var(--ok);
   padding: 2px 4px;
   border-radius: 2px;
   text-align: center;
@@ -628,12 +626,12 @@ onMounted(() => {
 }
 
 .table-row.header {
-  background: var(--color-primary);
+  background: var(--ok);
 }
 
 .slide-caption {
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
   text-align: center;
 }
 
@@ -641,6 +639,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
+  padding: var(--sp-6);
 }
 
 .history-header {
@@ -652,8 +651,8 @@ onMounted(() => {
 .btn-text {
   background: none;
   border: none;
-  color: var(--color-primary);
-  font-size: var(--text-sm);
+  color: var(--ok);
+  font-size: var(--fs-14);
   cursor: pointer;
 }
 
@@ -664,18 +663,18 @@ onMounted(() => {
 .reports-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--text-sm);
+  font-size: var(--fs-14);
 }
 
 .reports-table th,
 .reports-table td {
   padding: var(--sp-3);
   text-align: left;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--glass-stroke);
 }
 
 .reports-table th {
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-weight: 500;
 }
 
@@ -683,7 +682,7 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-1);
-  color: var(--color-primary);
+  color: var(--ok);
   text-decoration: none;
   font-weight: 500;
 }
@@ -691,8 +690,8 @@ onMounted(() => {
 .empty-state, .loading-state {
   padding: var(--sp-8);
   text-align: center;
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-size: var(--fs-14);
   display: flex;
   align-items: center;
   justify-content: center;

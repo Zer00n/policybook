@@ -50,11 +50,16 @@ function onRightScroll() {
   })
 }
 
+let loadDocumentRequestSeq = 0
+
 async function loadDocument() {
+  const seq = ++loadDocumentRequestSeq
   try {
     const res = await fetch(`/api/documents/${props.documentId}`)
-    if (res.ok) {
-      docDetails.value = await res.json()
+    const data = res.ok ? await res.json() : null
+    if (seq !== loadDocumentRequestSeq) return
+    if (data) {
+      docDetails.value = data
       if (docDetails.value.pages?.length) {
         currentPage.value = 1
         loadPageCompare(1)
@@ -65,17 +70,25 @@ async function loadDocument() {
   }
 }
 
+// 请求序号：翻页过快时，只采用最后一次发起的请求的结果，避免慢响应覆盖新页面的数据
+let pageCompareRequestSeq = 0
+
 async function loadPageCompare(pageNo: number) {
+  const seq = ++pageCompareRequestSeq
   loading.value = true
   try {
     const res = await fetch(`/api/documents/${props.documentId}/pages/${pageNo}/pii-compare`)
-    if (res.ok) {
-      compareData.value = await res.json()
+    const data = res.ok ? await res.json() : null
+    if (seq !== pageCompareRequestSeq) return
+    if (data) {
+      compareData.value = data
     }
   } catch (err) {
     console.error('加载脱敏对比数据失败:', err)
   } finally {
-    loading.value = false
+    if (seq === pageCompareRequestSeq) {
+      loading.value = false
+    }
   }
 }
 

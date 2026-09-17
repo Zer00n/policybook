@@ -110,6 +110,21 @@ function dateToX(dStr: string): number {
   return PADDING_LEFT + ratio * CHART_WIDTH
 }
 
+// 计算一段色带/空档在可视窗口内实际应绘制的矩形：
+// 两端都裁剪到可视范围，且当整段完全落在可视窗口之外时 visible=false（不渲染），
+// 避免出现贴在图表边缘、暗示并不存在的覆盖/空档的“幻影”色带
+function segRect(startDate: string, endDate: string, minWidth = 4) {
+  const rawStart = dateToX(startDate)
+  const rawEnd = dateToX(endDate)
+  const chartRight = PADDING_LEFT + CHART_WIDTH
+  if (rawEnd < PADDING_LEFT || rawStart > chartRight) {
+    return { x: 0, width: 0, visible: false }
+  }
+  const x = Math.max(PADDING_LEFT, rawStart)
+  const clampedEnd = Math.min(chartRight, rawEnd)
+  return { x, width: Math.max(minWidth, clampedEnd - x), visible: true }
+}
+
 // Time ticks (Months/Years)
 const timeTicks = computed(() => {
   const { startDate, endDate, totalDays } = dateRange.value
@@ -323,7 +338,7 @@ onUnmounted(() => {
             :y1="HEADER_HEIGHT - 6"
             :x2="PADDING_LEFT + CHART_WIDTH"
             :y2="HEADER_HEIGHT - 6"
-            stroke="var(--border-subtle)"
+            stroke="var(--glass-stroke)"
             stroke-width="1"
           />
 
@@ -334,7 +349,7 @@ onUnmounted(() => {
               :y1="HEADER_HEIGHT - 10"
               :x2="tick.x"
               :y2="svgHeight - 15"
-              stroke="var(--border-subtle)"
+              stroke="var(--glass-stroke)"
               :stroke-dasharray="tick.isYear ? 'none' : '3 3'"
               :stroke-width="tick.isYear ? 1.2 : 0.8"
               :opacity="tick.isYear ? 0.8 : 0.4"
@@ -364,7 +379,7 @@ onUnmounted(() => {
             :width="SVG_WIDTH - 20"
             :height="ROW_HEIGHT - 8"
             rx="6"
-            fill="var(--bg-glass-card)"
+            fill="var(--glass-fill-strong)"
             opacity="0.3"
           />
 
@@ -418,44 +433,52 @@ onUnmounted(() => {
             <!-- Segments within policy -->
             <g v-for="(seg, sIdx) in band.segments" :key="sIdx">
               <!-- Effective or Waiting bar -->
-              <rect
-                v-if="seg.segment_type === 'effective'"
-                :x="Math.max(PADDING_LEFT, dateToX(seg.start_date))"
-                :y="(ROW_HEIGHT - BAND_HEIGHT) / 2"
-                :width="Math.max(4, dateToX(seg.end_date) - Math.max(PADDING_LEFT, dateToX(seg.start_date)))"
-                :height="BAND_HEIGHT"
-                rx="4"
-                :fill="member.member_color || '#2A8F82'"
-                class="segment-rect segment-rect--clickable"
-                @mouseenter="showSegmentTooltip($event, seg, band)"
-                @mouseleave="hideTooltip"
-                @click="onSegmentClick(seg.policy_id)"
-              />
-
-              <!-- Waiting period (with hatch) -->
-              <g v-else-if="seg.segment_type === 'waiting'">
+              <template v-if="seg.segment_type === 'effective'">
                 <rect
-                  :x="Math.max(PADDING_LEFT, dateToX(seg.start_date))"
+                  v-for="rect in [segRect(seg.start_date, seg.end_date)]"
+                  v-show="rect.visible"
+                  :key="'eff-' + sIdx"
+                  :x="rect.x"
                   :y="(ROW_HEIGHT - BAND_HEIGHT) / 2"
-                  :width="Math.max(4, dateToX(seg.end_date) - Math.max(PADDING_LEFT, dateToX(seg.start_date)))"
+                  :width="rect.width"
                   :height="BAND_HEIGHT"
                   rx="4"
                   :fill="member.member_color || '#2A8F82'"
-                  opacity="0.35"
-                />
-                <rect
-                  :x="Math.max(PADDING_LEFT, dateToX(seg.start_date))"
-                  :y="(ROW_HEIGHT - BAND_HEIGHT) / 2"
-                  :width="Math.max(4, dateToX(seg.end_date) - Math.max(PADDING_LEFT, dateToX(seg.start_date)))"
-                  :height="BAND_HEIGHT"
-                  rx="4"
-                  fill="url(#hatch-waiting)"
-                  style="color: #fff;"
                   class="segment-rect segment-rect--clickable"
                   @mouseenter="showSegmentTooltip($event, seg, band)"
                   @mouseleave="hideTooltip"
                   @click="onSegmentClick(seg.policy_id)"
                 />
+              </template>
+
+              <!-- Waiting period (with hatch) -->
+              <g v-else-if="seg.segment_type === 'waiting'">
+                <template v-for="rect in [segRect(seg.start_date, seg.end_date)]" :key="'wait-' + sIdx">
+                  <rect
+                    v-show="rect.visible"
+                    :x="rect.x"
+                    :y="(ROW_HEIGHT - BAND_HEIGHT) / 2"
+                    :width="rect.width"
+                    :height="BAND_HEIGHT"
+                    rx="4"
+                    :fill="member.member_color || '#2A8F82'"
+                    opacity="0.35"
+                  />
+                  <rect
+                    v-show="rect.visible"
+                    :x="rect.x"
+                    :y="(ROW_HEIGHT - BAND_HEIGHT) / 2"
+                    :width="rect.width"
+                    :height="BAND_HEIGHT"
+                    rx="4"
+                    fill="url(#hatch-waiting)"
+                    style="color: #fff;"
+                    class="segment-rect segment-rect--clickable"
+                    @mouseenter="showSegmentTooltip($event, seg, band)"
+                    @mouseleave="hideTooltip"
+                    @click="onSegmentClick(seg.policy_id)"
+                  />
+                </template>
               </g>
             </g>
           </g>
@@ -463,25 +486,29 @@ onUnmounted(() => {
           <!-- Gap Segments (Red Dashed Box) -->
           <g v-if="member.gap_segments && member.gap_segments.length > 0">
             <g v-for="(gap, gIdx) in member.gap_segments" :key="gIdx">
-              <rect
-                :x="Math.max(PADDING_LEFT, dateToX(gap.start_date))"
-                :y="(ROW_HEIGHT - GAP_HEIGHT) / 2"
-                :width="Math.max(14, dateToX(gap.end_date) - Math.max(PADDING_LEFT, dateToX(gap.start_date)))"
-                :height="GAP_HEIGHT"
-                rx="3"
-                class="gap-rect"
-                @mouseenter="showSegmentTooltip($event, gap)"
-                @mouseleave="hideTooltip"
-              />
-              <text
-                :x="Math.max(PADDING_LEFT, dateToX(gap.start_date)) + Math.max(14, dateToX(gap.end_date) - Math.max(PADDING_LEFT, dateToX(gap.start_date))) / 2"
-                :y="ROW_HEIGHT / 2"
-                dominant-baseline="central"
-                text-anchor="middle"
-                class="gap-label-text"
-              >
-                空档
-              </text>
+              <template v-for="rect in [segRect(gap.start_date, gap.end_date, 14)]" :key="gIdx">
+                <rect
+                  v-show="rect.visible"
+                  :x="rect.x"
+                  :y="(ROW_HEIGHT - GAP_HEIGHT) / 2"
+                  :width="rect.width"
+                  :height="GAP_HEIGHT"
+                  rx="3"
+                  class="gap-rect"
+                  @mouseenter="showSegmentTooltip($event, gap)"
+                  @mouseleave="hideTooltip"
+                />
+                <text
+                  v-show="rect.visible"
+                  :x="rect.x + rect.width / 2"
+                  :y="ROW_HEIGHT / 2"
+                  dominant-baseline="central"
+                  text-anchor="middle"
+                  class="gap-label-text"
+                >
+                  空档
+                </text>
+              </template>
             </g>
           </g>
         </g>
@@ -567,7 +594,7 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: var(--sp-3);
   padding-bottom: var(--sp-2);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--glass-stroke);
 }
 
 .toolbar-title-group {
@@ -577,7 +604,7 @@ onUnmounted(() => {
 }
 
 .toolbar-title {
-  font-size: var(--fs-18);
+  font-size: var(--fs-19);
   font-weight: 700;
 }
 
@@ -595,8 +622,8 @@ onUnmounted(() => {
 
 .zoom-btn-group {
   display: flex;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  background: var(--glass-fill-strong);
+  border: 1px solid var(--glass-stroke);
   border-radius: var(--r-control);
   padding: 2px;
 }
@@ -608,12 +635,12 @@ onUnmounted(() => {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   transition: all 0.15s ease;
 }
 
 .zoom-btn.active {
-  background: var(--primary);
+  background: var(--ok);
   color: #fff;
   font-weight: 600;
 }
@@ -625,15 +652,15 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
+  border: 1px solid var(--glass-stroke);
+  background: var(--glass-fill-strong);
   cursor: pointer;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .icon-tool-btn:hover {
-  color: var(--primary);
-  border-color: var(--primary);
+  color: var(--ok);
+  border-color: var(--ok);
 }
 
 .legend-group {
@@ -641,7 +668,7 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--sp-3);
   font-size: var(--fs-12);
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .legend-item {
@@ -657,16 +684,16 @@ onUnmounted(() => {
 }
 
 .legend-box--effective {
-  background: var(--primary);
+  background: var(--ok);
 }
 
 .legend-box--waiting {
   background: repeating-linear-gradient(
     45deg,
-    color-mix(in oklch, var(--primary) 40%, transparent),
-    color-mix(in oklch, var(--primary) 40%, transparent) 3px,
-    var(--primary) 3px,
-    var(--primary) 6px
+    color-mix(in oklch, var(--ok) 40%, transparent),
+    color-mix(in oklch, var(--ok) 40%, transparent) 3px,
+    var(--ok) 3px,
+    var(--ok) 6px
   );
 }
 
@@ -701,13 +728,13 @@ onUnmounted(() => {
 .axis-text--year {
   font-size: 11px;
   font-weight: bold;
-  fill: var(--text-primary);
+  fill: var(--text);
 }
 
 .member-name-text {
   font-size: 13px;
   font-weight: 600;
-  fill: var(--text-primary);
+  fill: var(--text);
 }
 
 .member-relation-text {
@@ -763,9 +790,9 @@ onUnmounted(() => {
   z-index: 100;
   padding: 8px 12px;
   border-radius: var(--r-control);
-  background: var(--bg-glass-card);
+  background: var(--glass-fill-strong);
   backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--glass-stroke);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   display: flex;
   flex-direction: column;
@@ -783,9 +810,9 @@ onUnmounted(() => {
 }
 
 .tooltip-title {
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   font-weight: bold;
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .tooltip-tag {
@@ -806,7 +833,7 @@ onUnmounted(() => {
 
 .tooltip-row {
   font-size: var(--fs-12);
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .tooltip-muted {
@@ -815,7 +842,7 @@ onUnmounted(() => {
 
 .tooltip-hint {
   font-size: 10px;
-  color: var(--primary);
+  color: var(--ok);
   margin-top: 2px;
   font-style: italic;
 }

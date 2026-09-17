@@ -215,7 +215,7 @@ function onCellClick(cell: HeatmapCell) {
   width: 100%;
   border-collapse: separate;
   border-spacing: 6px;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
 }
 
 .col-member {
@@ -229,7 +229,7 @@ function onCellClick(cell: HeatmapCell) {
 .col-category {
   text-align: center;
   padding: 8px 12px;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-weight: 600;
 }
 
@@ -258,13 +258,13 @@ function onCellClick(cell: HeatmapCell) {
 
 .member-name {
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .relation-tag {
   font-size: 10px;
   padding: 1px 5px;
-  background: var(--bg-surface);
+  background: var(--glass-fill-strong);
   border-radius: 4px;
   color: var(--text-muted);
 }
@@ -298,13 +298,13 @@ function onCellClick(cell: HeatmapCell) {
 .heatmap-cell--full {
   background: color-mix(in oklch, var(--ok) 18%, transparent);
   border: 1px solid color-mix(in oklch, var(--ok) 35%, transparent);
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .heatmap-cell--partial {
   background: color-mix(in oklch, var(--accent) 15%, transparent);
   border: 1px solid color-mix(in oklch, var(--accent) 30%, transparent);
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .heatmap-cell--none {
@@ -332,7 +332,7 @@ function onCellClick(cell: HeatmapCell) {
 }
 
 .cell-amount {
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   font-weight: bold;
 }
 

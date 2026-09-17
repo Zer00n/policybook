@@ -56,7 +56,11 @@ async function fetchMembers() {
   } catch {}
 }
 
+// 请求序号：筛选条件快速切换时，只采用最后一次发起的请求的结果，避免慢响应覆盖新筛选条件下的列表
+let fetchPoliciesRequestSeq = 0
+
 async function fetchPolicies() {
+  const seq = ++fetchPoliciesRequestSeq
   loading.value = true
   try {
     const params = new URLSearchParams()
@@ -68,14 +72,17 @@ async function fetchPolicies() {
     }
 
     const res = await fetch(`/api/policies?${params.toString()}`)
-    if (res.ok) {
-      const data = await res.json()
-      policies.value = data.items || []
-    }
+    const data = res.ok ? await res.json() : null
+    if (seq !== fetchPoliciesRequestSeq) return
+    policies.value = data?.items || []
   } catch {
-    policies.value = []
+    if (seq === fetchPoliciesRequestSeq) {
+      policies.value = []
+    }
   } finally {
-    loading.value = false
+    if (seq === fetchPoliciesRequestSeq) {
+      loading.value = false
+    }
   }
 }
 
@@ -230,7 +237,11 @@ function getStatusBadge(st: string) {
         v-for="policy in policies"
         :key="policy.id"
         class="policy-card glass-subtle"
+        role="button"
+        tabindex="0"
         @click="router.push(`/policies/${policy.id}`)"
+        @keydown.enter="router.push(`/policies/${policy.id}`)"
+        @keydown.space.prevent="router.push(`/policies/${policy.id}`)"
       >
         <div class="card-header">
           <div class="insurer-tag">{{ policy.insurer }}</div>
@@ -298,7 +309,10 @@ function getStatusBadge(st: string) {
             v-for="policy in policies"
             :key="policy.id"
             class="table-row"
+            tabindex="0"
             @click="router.push(`/policies/${policy.id}`)"
+            @keydown.enter="router.push(`/policies/${policy.id}`)"
+            @keydown.space.prevent="router.push(`/policies/${policy.id}`)"
           >
             <td>
               <div class="tbl-insurer">{{ policy.insurer }}</div>
@@ -353,7 +367,7 @@ function getStatusBadge(st: string) {
 
 .page-title {
   margin: 0 0 4px;
-  font-size: var(--fs-24);
+  font-size: var(--fs-23);
   font-weight: 700;
   color: var(--text);
 }
@@ -413,12 +427,15 @@ function getStatusBadge(st: string) {
   background: var(--c-paper);
   color: var(--text);
   font-size: var(--fs-14);
-  outline: none;
 }
 
 .search-input:focus {
   border-color: var(--ok);
+}
+
+.search-input:focus-visible {
   outline: 2px solid var(--ok);
+  outline-offset: 2px;
 }
 
 .filter-select {
@@ -427,9 +444,13 @@ function getStatusBadge(st: string) {
   border: 1px solid var(--glass-stroke);
   background: var(--c-paper);
   color: var(--text);
-  font-size: var(--fs-13);
-  outline: none;
+  font-size: var(--fs-12);
   cursor: pointer;
+}
+
+.filter-select:focus-visible {
+  outline: 2px solid var(--ok);
+  outline-offset: 2px;
 }
 
 .view-switch {
@@ -467,8 +488,8 @@ function getStatusBadge(st: string) {
   background: transparent;
   border: 1px solid transparent;
   padding: 6px 14px;
-  border-radius: var(--r-badge);
-  font-size: var(--fs-13);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-12);
   color: var(--text-muted);
   cursor: pointer;
 }
@@ -517,7 +538,7 @@ function getStatusBadge(st: string) {
 
 .card-title {
   margin: 0 0 4px;
-  font-size: var(--fs-18);
+  font-size: var(--fs-19);
   font-weight: 600;
   color: var(--text);
 }
@@ -538,7 +559,7 @@ function getStatusBadge(st: string) {
 .member-chip {
   font-size: var(--fs-12);
   padding: 2px 8px;
-  border-radius: var(--r-badge);
+  border-radius: var(--r-pill);
   border: 1px solid;
   background: var(--glass-fill);
   display: inline-flex;
@@ -604,7 +625,7 @@ function getStatusBadge(st: string) {
 .status-badge {
   font-size: var(--fs-12);
   padding: 2px 8px;
-  border-radius: var(--r-badge);
+  border-radius: var(--r-pill);
   font-weight: 500;
 }
 
@@ -647,7 +668,7 @@ function getStatusBadge(st: string) {
   background: var(--glass-fill-strong);
   color: var(--text-muted);
   font-weight: 500;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   border-bottom: 1px solid var(--glass-stroke);
 }
 
@@ -686,7 +707,7 @@ function getStatusBadge(st: string) {
 }
 
 .tbl-date {
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -714,7 +735,7 @@ function getStatusBadge(st: string) {
 
 .empty-title {
   margin: 0 0 8px;
-  font-size: var(--fs-18);
+  font-size: var(--fs-19);
   color: var(--text);
 }
 

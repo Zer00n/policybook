@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowLeft,
@@ -138,8 +138,17 @@ async function savePolicyParties() {
   }
 }
 
-onMounted(() => {
+// Vue Router 在两个都命中 /policies/:id 的路由间跳转时会复用同一组件实例，
+// onMounted 不会再次触发，必须显式监听参数变化才能刷新为新保单的数据
+watch(policyId, () => {
+  // 重置与上一份保单相关的阅读器/高亮状态，避免短暂显示旧保单的原文与高亮
+  drawerOpen.value = false
+  activeHighlight.value = null
+  showPlainPolicyNo.value = false
   fetchPolicyDetail()
+}, { immediate: true })
+
+onMounted(() => {
   fetchMembers()
 })
 
@@ -564,7 +573,7 @@ const beneficiaryParties = computed(() => {
               </div>
 
               <!-- 原文引用 -->
-              <div v-if="excl.quote" class="quote-container font-serif">
+              <div v-if="excl.quote" class="quote-container">
                 <p class="quote-text">{{ excl.quote }}</p>
               </div>
 
@@ -738,7 +747,7 @@ const beneficiaryParties = computed(() => {
   color: var(--text);
   padding: 6px 12px;
   border-radius: var(--r-control);
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   font-weight: 500;
   display: inline-flex;
   align-items: center;
@@ -761,7 +770,7 @@ const beneficiaryParties = computed(() => {
 .btn-action {
   padding: 6px 14px;
   border-radius: var(--r-control);
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   font-weight: 500;
   cursor: pointer;
   display: inline-flex;
@@ -846,7 +855,7 @@ const beneficiaryParties = computed(() => {
 }
 
 .company-badge {
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -895,7 +904,7 @@ const beneficiaryParties = computed(() => {
 
 .policy-title {
   margin: 0 0 12px;
-  font-size: var(--fs-24);
+  font-size: var(--fs-23);
   font-weight: 700;
   color: var(--text);
   line-height: 1.3;
@@ -908,7 +917,7 @@ const beneficiaryParties = computed(() => {
   flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 16px;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
 }
 
 .policy-no-wrap {
@@ -980,7 +989,7 @@ const beneficiaryParties = computed(() => {
 }
 
 .party-role-title {
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text-muted);
   min-width: 72px;
 }
@@ -1044,7 +1053,7 @@ const beneficiaryParties = computed(() => {
 }
 
 .metric-value {
-  font-size: var(--fs-18);
+  font-size: var(--fs-19);
   font-weight: 700;
   color: var(--text);
   font-variant-numeric: tabular-nums;
@@ -1059,7 +1068,7 @@ const beneficiaryParties = computed(() => {
   display: flex;
   align-items: center;
   gap: 20px;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text-muted);
   flex-wrap: wrap;
 }
@@ -1094,14 +1103,14 @@ const beneficiaryParties = computed(() => {
 
 .panel-title {
   margin: 0 0 4px;
-  font-size: var(--fs-18);
+  font-size: var(--fs-19);
   font-weight: 700;
   color: var(--text);
 }
 
 .panel-subtitle {
   margin: 0;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text-muted);
 }
 
@@ -1122,7 +1131,7 @@ const beneficiaryParties = computed(() => {
 .coverages-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
 }
 
 .coverages-table th {
@@ -1270,13 +1279,13 @@ const beneficiaryParties = computed(() => {
 
 /* 原文引用块：思源宋体 + 2px 朱砂色竖线 */
 .quote-container {
-  font-family: var(--font-quote, "Source Han Serif SC", "Songti SC", "SimSun", serif);
-  font-size: var(--fs-13);
+  font-family: var(--font-quote);
+  font-size: var(--fs-14);
   color: var(--text);
-  line-height: var(--lh-quote, 1.8);
+  line-height: var(--lh-quote);
   padding: 8px 14px;
   background: var(--c-paper);
-  border-left: 3px solid var(--risk);
+  border-left: 2px solid var(--risk);
   border-radius: 0 var(--r-control) var(--r-control) 0;
 }
 
@@ -1438,7 +1447,7 @@ const beneficiaryParties = computed(() => {
 
 .modal-title {
   margin: 0 0 8px;
-  font-size: var(--fs-18);
+  font-size: var(--fs-19);
   font-weight: 700;
   color: var(--text);
 }
@@ -1493,9 +1502,26 @@ const beneficiaryParties = computed(() => {
     display: block;
     overflow-x: auto;
   }
+}
+
+/* 手机 (<600px)：原文阅读器改为从底部滑出的全屏抽屉，而非从右侧滑入 */
+@media (max-width: 599px) {
+  .reader-drawer-overlay {
+    align-items: flex-end;
+    justify-content: center;
+  }
 
   .reader-drawer {
-    width: 100vw;
+    width: 100%;
+    height: 90vh;
+    border-left: none;
+    border-top: 1px solid var(--glass-stroke);
+    border-radius: var(--r-panel) var(--r-panel) 0 0;
+  }
+
+  .drawer-fade-enter-from .reader-drawer,
+  .drawer-fade-leave-to .reader-drawer {
+    transform: translateY(100%);
   }
 }
 </style>

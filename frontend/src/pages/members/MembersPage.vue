@@ -103,20 +103,27 @@ function openEditModal(m: Member) {
 async function submitForm() {
   if (!form.value.display_name.trim()) return
 
-  if (isEditing.value && editingId.value) {
-    // 更新
-    await fetch(`/api/members/${editingId.value}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form.value),
-    })
-  } else {
-    // 新增
-    await fetch('/api/members', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form.value),
-    })
+  try {
+    const res = isEditing.value && editingId.value
+      ? await fetch(`/api/members/${editingId.value}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form.value),
+        })
+      : await fetch('/api/members', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form.value),
+        })
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => null)
+      alert(`保存失败：${err?.error?.message || res.statusText}`)
+      return
+    }
+  } catch (err: any) {
+    alert(`请求异常：${err.message}`)
+    return
   }
 
   showModal.value = false
@@ -125,11 +132,20 @@ async function submitForm() {
 }
 
 async function deleteMember(id: string) {
-  if (confirm('确定删除该家庭成员记录吗？')) {
-    await fetch(`/api/members/${id}`, { method: 'DELETE' })
-    await fetchMembers()
-    fetchCoverageAnalytics()
+  if (!confirm('确定删除该家庭成员记录吗？')) return
+  try {
+    const res = await fetch(`/api/members/${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const err = await res.json().catch(() => null)
+      alert(`删除失败：${err?.error?.message || res.statusText}`)
+      return
+    }
+  } catch (err: any) {
+    alert(`请求异常：${err.message}`)
+    return
   }
+  await fetchMembers()
+  fetchCoverageAnalytics()
 }
 
 const radarData = ref<{ members: any[]; dimension_names: string[] }>({ members: [], dimension_names: [] })

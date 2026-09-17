@@ -281,10 +281,13 @@ function listenToJob(job: ActiveJob) {
   es.addEventListener('error', (event: any) => {
     try {
       const data = JSON.parse(event.data)
+      // 后端主动推送的结构化 error 事件是终止事件，关闭连接，不依赖浏览器默认重连
       job.status = 'failed'
       job.error = data.message || '处理异常中断'
+      es.close()
     } catch {
-      // 网络断开或连接关闭
+      // event.data 无法解析：属于连接层面的网络错误（而非后端下发的终止事件），
+      // 交由浏览器 EventSource 的默认重连机制处理
     }
   })
 }
@@ -554,6 +557,12 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.text-muted { color: var(--text-muted); }
+.animate-spin { animation: import-page-spin 1s linear infinite; }
+@keyframes import-page-spin {
+  to { transform: rotate(360deg); }
+}
+
 .import-page {
   max-width: 1080px;
   margin: 0 auto;
@@ -673,7 +682,7 @@ onUnmounted(() => {
 
 .job-name {
   font-weight: 600;
-  font-size: var(--fs-15);
+  font-size: var(--fs-14);
   color: var(--text);
 }
 
@@ -753,7 +762,7 @@ onUnmounted(() => {
 }
 
 .step-name {
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   font-weight: 600;
   color: var(--text);
 }
@@ -814,7 +823,7 @@ onUnmounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   padding: 4px 8px;
   border-radius: var(--r-control);
   transition: color 0.15s ease;

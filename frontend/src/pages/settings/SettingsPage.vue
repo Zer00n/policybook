@@ -147,15 +147,22 @@ async function saveReferences() {
 async function testModel(modelKey?: string) {
   testingModel.value = true
   testResult.value = null
+  const modelLabel = settingsData.value?.models?.find((m: any) => m.key === modelKey)?.display_name
+    || modelKey || '默认模型'
   try {
     const res = await fetch('/api/settings/models/test', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model_key: modelKey }),
     })
-    testResult.value = await res.json()
+    const data = await res.json()
+    if (res.ok) {
+      testResult.value = { ok: true, display_name: data.display_name || modelLabel, latency_ms: data.latency_ms }
+    } else {
+      testResult.value = { ok: false, display_name: modelLabel, error: data?.error?.message || '连通测试失败' }
+    }
   } catch (err: any) {
-    testResult.value = { ok: false, error: err.message }
+    testResult.value = { ok: false, display_name: modelLabel, error: err.message || '网络请求异常' }
   } finally {
     testingModel.value = false
   }
@@ -419,8 +426,8 @@ onMounted(() => {
 }
 
 .panel-desc {
-  font-size: var(--fs-13);
-  color: var(--text-secondary);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
   line-height: 1.6;
   margin: 0;
 }
@@ -430,7 +437,7 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: var(--sp-3) 0;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--glass-stroke);
 }
 
 .setting-row:last-child {
@@ -454,9 +461,9 @@ onMounted(() => {
 }
 
 .btn-secondary.active {
-  background: var(--primary);
+  background: var(--ok);
   color: #fff;
-  border-color: var(--primary);
+  border-color: var(--ok);
 }
 
 /* ICS Box */
@@ -472,9 +479,9 @@ onMounted(() => {
 
 .ics-input {
   font-family: monospace;
-  font-size: var(--fs-13);
-  background: var(--bg-surface);
-  color: var(--text-secondary);
+  font-size: var(--fs-12);
+  background: var(--glass-fill-strong);
+  color: var(--text-muted);
   flex: 1;
 }
 
@@ -498,7 +505,7 @@ onMounted(() => {
 
 .ref-label {
   font-size: var(--fs-12);
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-weight: 600;
 }
 
@@ -522,12 +529,12 @@ onMounted(() => {
 
 .model-card {
   padding: var(--sp-3) var(--sp-4);
-  background: var(--bg-surface);
+  background: var(--glass-fill-strong);
   border-radius: var(--r-control);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--glass-stroke);
 }
 
 .model-name {

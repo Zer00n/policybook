@@ -118,7 +118,7 @@ function handleSkip() {
 .questions-card {
   background: var(--glass-fill);
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-panel);
+  border-radius: var(--r-panel);
   padding: var(--sp-5);
   backdrop-filter: blur(var(--glass-blur));
   margin: var(--sp-4) 0;
@@ -146,14 +146,14 @@ function handleSkip() {
 }
 
 .tag-title {
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   font-weight: 600;
   color: var(--c-apricot);
   letter-spacing: 0.02em;
 }
 
 .header-hint {
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text-muted);
   margin: 0;
   line-height: 1.5;
@@ -184,7 +184,7 @@ function handleSkip() {
   color: var(--c-apricot);
   background: color-mix(in oklch, var(--c-apricot) 14%, transparent);
   padding: 2px 6px;
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
 }
 
 .q-dim-label {
@@ -206,7 +206,7 @@ function handleSkip() {
   background: color-mix(in oklch, var(--c-apricot) 10%, transparent);
   color: var(--c-apricot);
   padding: 4px 10px;
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   width: fit-content;
 }
 
@@ -236,9 +236,9 @@ function handleSkip() {
   gap: 6px;
   background: var(--glass-fill);
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   padding: 6px 14px;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text);
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
@@ -275,7 +275,7 @@ function handleSkip() {
   gap: 6px;
   background: transparent;
   border: 1px dashed var(--glass-stroke);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   padding: 8px 14px;
   font-size: var(--fs-12);
   color: var(--text-muted);
@@ -294,9 +294,9 @@ function handleSkip() {
   background: var(--c-celadon);
   color: white;
   border: none;
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   padding: 8px 18px;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   font-weight: 500;
   cursor: pointer;
 }

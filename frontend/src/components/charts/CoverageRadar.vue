@@ -5,6 +5,8 @@ import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { RadarChart } from 'echarts/charts'
 import { TooltipComponent, LegendComponent } from 'echarts/components'
+import { getCssVar } from '@/utils/theme-color'
+import { useThemeStore } from '@/stores/theme'
 
 use([CanvasRenderer, RadarChart, TooltipComponent, LegendComponent])
 
@@ -64,7 +66,16 @@ const isMemberActive = (id: string) => {
   return selectedIds.value.includes(id)
 }
 
+const themeStore = useThemeStore()
+
 const chartOption = computed(() => {
+  // 依赖 isDark 使该 computed 在主题切换时重新求值，从而重新读取 CSS 变量
+  void themeStore.isDark
+
+  const colorTextMuted = getCssVar('--text-muted', '#5D6B68')
+  const colorStroke = getCssVar('--glass-stroke', 'rgba(0,0,0,0.1)')
+  const colorOk = getCssVar('--ok', '#2A8F82')
+
   const indicators = props.dimensionNames.map(name => ({
     name,
     max: 120 // 120% cap
@@ -79,11 +90,11 @@ const chartOption = computed(() => {
     symbol: 'none',
     lineStyle: {
       type: 'dashed',
-      color: '#94A3B8',
+      color: colorTextMuted,
       width: 1.5
     },
     itemStyle: {
-      color: '#94A3B8'
+      color: colorTextMuted
     },
     areaStyle: {
       color: 'transparent'
@@ -93,7 +104,7 @@ const chartOption = computed(() => {
   // DEV-GUIDE 7.9: 成员多边形使用成员头像色 20% 填充
   activeMembers.value.forEach(m => {
     const values = m.dimensions.map(d => d.score_pct)
-    const color = m.member_color || '#2A8F82'
+    const color = m.member_color || colorOk
 
     seriesData.push({
       name: m.member_name,
@@ -133,7 +144,7 @@ const chartOption = computed(() => {
           html += `<div style="display:flex;justify-content:space-between;gap:12px">
             <span>${d.name}:</span>
             <b>${d.effective_display}</b>
-            <span style="color:#94a3b8;font-size:11px">(${refText} · ${d.score_pct}%)</span>
+            <span style="color:var(--text-muted);font-size:11px">(${refText} · ${d.score_pct}%)</span>
           </div>`
         })
         return html
@@ -144,13 +155,13 @@ const chartOption = computed(() => {
       shape: 'polygon',
       splitNumber: 4,
       axisName: {
-        color: 'var(--text-secondary)',
+        color: colorTextMuted,
         fontSize: 12,
         fontWeight: 'bold'
       },
       splitLine: {
         lineStyle: {
-          color: 'var(--border-subtle)'
+          color: colorStroke
         }
       },
       splitArea: {
@@ -161,7 +172,7 @@ const chartOption = computed(() => {
       },
       axisLine: {
         lineStyle: {
-          color: 'var(--border-subtle)'
+          color: colorStroke
         }
       }
     },
@@ -194,7 +205,7 @@ const chartOption = computed(() => {
             borderColor: isMemberActive(m.member_id) ? m.member_color : 'transparent',
             backgroundColor: isMemberActive(m.member_id)
               ? `color-mix(in oklch, ${m.member_color} 20%, transparent)`
-              : 'var(--bg-surface)'
+              : 'var(--glass-fill-strong)'
           }"
           @click="toggleMember(m.member_id)"
         >
@@ -253,13 +264,13 @@ const chartOption = computed(() => {
   border-radius: 16px;
   font-size: var(--fs-12);
   cursor: pointer;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--glass-stroke);
   transition: all 0.15s ease;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .member-pill.active {
-  color: var(--text-primary);
+  color: var(--text);
   font-weight: 600;
 }
 

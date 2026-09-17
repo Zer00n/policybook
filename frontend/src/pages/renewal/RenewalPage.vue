@@ -96,9 +96,13 @@ async function startNewSession(policyId: string) {
       const newSession = await res.json()
       activeSession.value = newSession
       sessionsList.value.unshift(newSession)
+    } else {
+      const err = await res.json().catch(() => null)
+      alert(`创建续保规划会话失败：${err?.error?.message || res.statusText}`)
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error('Failed to create renewal session:', err)
+    alert(`请求异常：${err.message}`)
   } finally {
     loading.value = false
   }
@@ -142,9 +146,13 @@ async function handleSendMessage(options?: { answers?: Record<string, string>; s
       // Update session in list
       const idx = sessionsList.value.findIndex(s => s.id === updatedSession.id)
       if (idx >= 0) sessionsList.value[idx] = updatedSession
+    } else {
+      const err = await res.json().catch(() => null)
+      alert(`发送失败：${err?.error?.message || res.statusText}`)
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error('Failed to send renewal message:', err)
+    alert(`请求异常：${err.message}`)
   } finally {
     sending.value = false
   }
@@ -247,7 +255,11 @@ onMounted(() => {
               v-for="s in sessionsList"
               :key="s.id"
               class="session-history-item"
+              role="button"
+              tabindex="0"
               @click="selectSession(s)"
+              @keydown.enter="selectSession(s)"
+              @keydown.space.prevent="selectSession(s)"
             >
               <div class="sess-info">
                 <div class="sess-name">{{ s.policy_name || '意外险规划' }}</div>
@@ -280,7 +292,7 @@ onMounted(() => {
               <span v-else>我</span>
             </div>
 
-            <div class="msg-bubble glass">
+            <div class="msg-bubble">
               <div class="msg-content">{{ msg.content }}</div>
             </div>
           </div>
@@ -346,7 +358,7 @@ onMounted(() => {
               rows="2"
               placeholder="请描述您今年的工作生活变化，或直接回答上述问题..."
               :disabled="sending"
-              @keydown.enter.prevent="handleSendMessage()"
+              @keydown.enter.exact.prevent="handleSendMessage()"
             ></textarea>
             <button
               type="button"
@@ -429,7 +441,7 @@ onMounted(() => {
 .page-header {
   background: var(--glass-fill);
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-panel);
+  border-radius: var(--r-panel);
   padding: var(--sp-4) var(--sp-5);
   backdrop-filter: blur(var(--glass-blur));
   box-shadow: var(--glass-shadow);
@@ -450,9 +462,9 @@ onMounted(() => {
   gap: 4px;
   background: color-mix(in oklch, var(--text) 5%, transparent);
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   padding: 6px 12px;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text);
   cursor: pointer;
 }
@@ -475,7 +487,7 @@ onMounted(() => {
 
 .page-title {
   margin: 0;
-  font-size: var(--fs-18);
+  font-size: var(--fs-19);
   font-weight: 700;
   color: var(--text);
 }
@@ -485,23 +497,23 @@ onMounted(() => {
   background: var(--c-celadon);
   color: white;
   padding: 2px 8px;
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   font-weight: 600;
 }
 
 .header-desc {
   margin: 0;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text-muted);
 }
 
 .baseline-badge {
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   font-weight: 600;
   color: var(--c-apricot);
   background: color-mix(in oklch, var(--c-apricot) 12%, transparent);
   padding: 4px 12px;
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
 }
 
 /* Selector Grid */
@@ -514,7 +526,7 @@ onMounted(() => {
 .selector-panel {
   background: var(--glass-fill);
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-panel);
+  border-radius: var(--r-panel);
   padding: var(--sp-5);
   backdrop-filter: blur(var(--glass-blur));
   box-shadow: var(--glass-shadow);
@@ -567,7 +579,7 @@ onMounted(() => {
   padding: var(--sp-3) var(--sp-4);
   background: color-mix(in oklch, var(--text) 3%, transparent);
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
 }
 
 .pol-name {
@@ -591,9 +603,9 @@ onMounted(() => {
   background: var(--c-celadon);
   color: white;
   border: none;
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   padding: 8px 14px;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   font-weight: 500;
   cursor: pointer;
 }
@@ -609,7 +621,7 @@ onMounted(() => {
   padding: var(--sp-3) var(--sp-4);
   background: color-mix(in oklch, var(--text) 3%, transparent);
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   cursor: pointer;
   transition: background 0.15s ease;
 }
@@ -701,12 +713,11 @@ onMounted(() => {
 }
 
 .msg-bubble {
-  background: var(--glass-fill);
+  /* 聊天气泡是滚动列表中的逐条元素，按规范不使用模糊玻璃，改用实色半透明 */
+  background: var(--glass-fill-strong);
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   padding: var(--sp-3) var(--sp-4);
-  backdrop-filter: blur(var(--glass-blur));
-  box-shadow: var(--glass-shadow);
 }
 
 .message-row.assistant .msg-bubble {
@@ -714,7 +725,7 @@ onMounted(() => {
 }
 
 .message-row.user .msg-bubble {
-  background: color-mix(in oklch, var(--c-celadon) 10%, white);
+  background: color-mix(in oklch, var(--c-celadon) 10%, var(--glass-fill-strong));
   border-color: var(--c-celadon);
 }
 
@@ -729,7 +740,7 @@ onMounted(() => {
 .chat-input-bar {
   background: var(--glass-fill);
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-panel);
+  border-radius: var(--r-panel);
   padding: var(--sp-3) var(--sp-4);
   backdrop-filter: blur(var(--glass-blur));
   box-shadow: var(--glass-shadow);
@@ -747,7 +758,7 @@ onMounted(() => {
 .chip-btn {
   background: color-mix(in oklch, var(--text) 4%, transparent);
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   padding: 4px 10px;
   font-size: 11px;
   color: var(--text-muted);
@@ -782,19 +793,23 @@ onMounted(() => {
 
 .text-input {
   flex: 1;
-  background: color-mix(in oklch, white 80%, transparent);
+  background: var(--glass-fill-strong);
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   padding: 8px 12px;
   font-family: var(--font-ui);
   font-size: var(--fs-14);
   color: var(--text);
   resize: none;
-  outline: none;
 }
 
 .text-input:focus {
   border-color: var(--c-celadon);
+}
+
+.text-input:focus-visible {
+  outline: 2px solid var(--ok);
+  outline-offset: 2px;
 }
 
 .btn-send {
@@ -804,9 +819,9 @@ onMounted(() => {
   background: var(--c-celadon);
   color: white;
   border: none;
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   padding: 10px 18px;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   font-weight: 500;
   cursor: pointer;
   height: fit-content;
@@ -828,7 +843,7 @@ onMounted(() => {
 .actions-card {
   background: var(--glass-fill);
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-panel);
+  border-radius: var(--r-panel);
   padding: var(--sp-4);
   backdrop-filter: blur(var(--glass-blur));
   box-shadow: var(--glass-shadow);
@@ -849,7 +864,7 @@ onMounted(() => {
 
 .sidebar-title {
   font-weight: 600;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text);
 }
 
@@ -890,7 +905,7 @@ onMounted(() => {
   gap: 6px;
   background: transparent;
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   padding: 8px 12px;
   font-size: var(--fs-12);
   color: var(--text);

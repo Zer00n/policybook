@@ -170,7 +170,7 @@ function toggleQuestion(idx: number) {
 .failure-banner {
   background: color-mix(in oklch, var(--c-cinnabar) 10%, white);
   border: 1px solid var(--c-cinnabar);
-  border-radius: var(--rad-panel);
+  border-radius: var(--r-panel);
   padding: var(--sp-4);
 }
 
@@ -185,7 +185,7 @@ function toggleQuestion(idx: number) {
 }
 
 .banner-body {
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text);
   line-height: 1.6;
 }
@@ -206,7 +206,7 @@ function toggleQuestion(idx: number) {
 .sources-card {
   background: var(--glass-fill);
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-panel);
+  border-radius: var(--r-panel);
   padding: var(--sp-4);
   backdrop-filter: blur(var(--glass-blur));
   box-shadow: var(--glass-shadow);
@@ -240,13 +240,13 @@ function toggleQuestion(idx: number) {
   background: color-mix(in oklch, var(--c-cinnabar) 12%, transparent);
   color: var(--c-cinnabar);
   padding: 2px 8px;
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   margin-left: auto;
 }
 
 .quote-text {
   font-family: var(--font-quote);
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   line-height: 1.8;
   color: var(--text);
   border-left: 3px solid var(--c-celadon);
@@ -255,7 +255,7 @@ function toggleQuestion(idx: number) {
 }
 
 .checklist-desc {
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text-muted);
   margin: 0 0 var(--sp-3) 0;
 }
@@ -272,7 +272,7 @@ function toggleQuestion(idx: number) {
   gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-3);
   background: color-mix(in oklch, var(--text) 2%, transparent);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   cursor: pointer;
   user-select: none;
   transition: background 0.15s ease;
@@ -294,7 +294,7 @@ function toggleQuestion(idx: number) {
 }
 
 .question-text {
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text);
   line-height: 1.5;
 }
@@ -302,7 +302,7 @@ function toggleQuestion(idx: number) {
 .missing-list {
   margin: 0;
   padding-left: var(--sp-4);
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text-muted);
   line-height: 1.6;
 }
@@ -320,7 +320,7 @@ function toggleQuestion(idx: number) {
   font-size: var(--fs-12);
   padding: 4px 8px;
   background: color-mix(in oklch, var(--text) 2%, transparent);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
 }
 
 .source-domain-badge {
@@ -328,7 +328,7 @@ function toggleQuestion(idx: number) {
   color: var(--c-celadon);
   background: color-mix(in oklch, var(--c-celadon) 10%, transparent);
   padding: 1px 6px;
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
 }
 
 .source-url {
@@ -359,7 +359,7 @@ function toggleQuestion(idx: number) {
   gap: var(--sp-2);
   background: color-mix(in oklch, var(--text) 4%, transparent);
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   padding: var(--sp-3) var(--sp-4);
   font-size: var(--fs-12);
   color: var(--text-muted);

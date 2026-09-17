@@ -91,7 +91,7 @@ const currentStepIndex = computed(() => {
 .profile-card {
   background: var(--glass-fill);
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-panel);
+  border-radius: var(--r-panel);
   padding: var(--sp-4);
   backdrop-filter: blur(var(--glass-blur));
   box-shadow: var(--glass-shadow);
@@ -127,7 +127,7 @@ const currentStepIndex = computed(() => {
   color: var(--c-celadon);
   background: color-mix(in oklch, var(--c-celadon) 14%, transparent);
   padding: 2px 8px;
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
 }
 
 .process-steps {
@@ -203,7 +203,7 @@ const currentStepIndex = computed(() => {
   align-items: center;
   background: color-mix(in oklch, var(--text) 3%, transparent);
   border: 1px solid var(--glass-stroke);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   padding: 6px 10px;
   font-size: var(--fs-12);
 }

@@ -131,12 +131,21 @@ function loadExample(type: 'appendix' | 'fracture' | 'cancer') {
   }
 }
 
+// v-model.number 在数字输入框被清空时会把值变成空字符串 ''，而不是 null，
+// 这里统一转换，避免把非法的空字符串发给后端
+function toNumberOrNull(v: unknown): number | null {
+  if (v === '' || v === null || v === undefined) return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
+
 async function runSimulation() {
   if (!selectedMemberId.value) {
     alert('请选择出险的家庭成员')
     return
   }
-  if (!totalCost.value || totalCost.value <= 0) {
+  const totalCostValue = toNumberOrNull(totalCost.value)
+  if (!totalCostValue || totalCostValue <= 0) {
     alert('请输入有效的总医疗费用')
     return
   }
@@ -151,10 +160,10 @@ async function runSimulation() {
         event_kind: eventKind.value,
         event_date: eventDate.value,
         description: description.value,
-        total_cost: totalCost.value,
+        total_cost: totalCostValue,
         has_si: hasSi.value,
-        si_reimbursed: hasSi.value ? siReimbursed.value : 0,
-        si_covered_cost: hasSi.value ? siCoveredCost.value : null,
+        si_reimbursed: hasSi.value ? (toNumberOrNull(siReimbursed.value) ?? 0) : 0,
+        si_covered_cost: hasSi.value ? toNumberOrNull(siCoveredCost.value) : null,
         city: city.value,
       }),
     })
@@ -179,36 +188,28 @@ async function openEvidence(item: {
   evidence_page_no?: number | null
   evidence_rects?: Array<{ x0: number; y0: number; x1: number; y1: number }>
 }) {
-  if (!item.evidence_quote) return
+  if (!item.evidence_quote || !item.coverage_id) return
 
   try {
-    // 若已知 coverage_id，找对应保单的 pages
-    let docId = ''
-    if (item.coverage_id) {
-      // 遍历已存保单寻找
-      for (const p of policies.value) {
-        if (p.id) {
-          const pRes = await fetch(`/api/policies/${p.id}`)
-          if (pRes.ok) {
-            const pData = await pRes.json()
-            if (pData.coverages?.some((c: any) => c.id === item.coverage_id)) {
-              drawerPages.value = pData.pages || []
-              drawerPolicyTitle.value = pData.product_name
-              docId = pData.document_id
-              break
-            }
-          }
-        }
+    // 必须先根据 coverage_id 精确定位到其所属保单，找不到就不展示——
+    // 绝不能回退到任意一份保单，否则会把高亮框错误地叠加到另一份合同的原文页上
+    let found = false
+    for (const p of policies.value) {
+      if (!p.id) continue
+      const pRes = await fetch(`/api/policies/${p.id}`)
+      if (!pRes.ok) continue
+      const pData = await pRes.json()
+      if (pData.coverages?.some((c: any) => c.id === item.coverage_id)) {
+        drawerPages.value = pData.pages || []
+        drawerPolicyTitle.value = pData.product_name
+        found = true
+        break
       }
     }
 
-    if (drawerPages.value.length === 0 && policies.value.length > 0) {
-      const pRes = await fetch(`/api/policies/${policies.value[0].id}`)
-      if (pRes.ok) {
-        const pData = await pRes.json()
-        drawerPages.value = pData.pages || []
-        drawerPolicyTitle.value = pData.product_name
-      }
+    if (!found) {
+      alert('未能定位到该条依据所属的保单原文，无法展示高亮定位。')
+      return
     }
 
     activeHighlight.value = {
@@ -219,6 +220,7 @@ async function openEvidence(item: {
     drawerOpen.value = true
   } catch (err) {
     console.error('Failed to open evidence drawer', err)
+    alert('加载原文出错，请稍后重试。')
   }
 }
 </script>
@@ -226,10 +228,10 @@ async function openEvidence(item: {
 <template>
   <div class="claim-page-layout">
     <!-- 左侧：录入与控制面板 -->
-    <div class="form-panel glass">
+    <div class="form-panel">
       <div class="panel-header">
         <h2 class="panel-title">
-          <Calculator class="w-5 h-5 mr-2 text-[var(--primary)]" />
+          <Calculator class="w-5 h-5 mr-2 text-ok" />
           理赔情景模拟
         </h2>
         <p class="panel-desc">
@@ -252,7 +254,7 @@ async function openEvidence(item: {
         <!-- 成员选择 -->
         <div class="form-group">
           <label class="form-label">
-            <User class="w-4 h-4 mr-1 text-[var(--text-3)]" />
+            <User class="w-4 h-4 mr-1 text-muted" />
             出险家庭成员
           </label>
           <select v-model="selectedMemberId" class="form-input select-input">
@@ -304,7 +306,7 @@ async function openEvidence(item: {
 
           <div class="form-group w-36">
             <label class="form-label">
-              <Calendar class="w-4 h-4 mr-1 text-[var(--text-3)]" />
+              <Calendar class="w-4 h-4 mr-1 text-muted" />
               出险日期
             </label>
             <input v-model="eventDate" type="date" class="form-input" />
@@ -326,7 +328,7 @@ async function openEvidence(item: {
         <div class="form-row">
           <div class="form-group flex-1">
             <label class="form-label">
-              <Receipt class="w-4 h-4 mr-1 text-[var(--text-3)]" />
+              <Receipt class="w-4 h-4 mr-1 text-muted" />
               总医疗花费 (元)
             </label>
             <input
@@ -339,7 +341,7 @@ async function openEvidence(item: {
           </div>
           <div class="form-group w-32">
             <label class="form-label">
-              <Building class="w-4 h-4 mr-1 text-[var(--text-3)]" />
+              <Building class="w-4 h-4 mr-1 text-muted" />
               就诊城市
             </label>
             <input v-model="city" type="text" class="form-input" placeholder="如：北京" />
@@ -350,7 +352,7 @@ async function openEvidence(item: {
         <div class="si-box">
           <div class="si-header">
             <label class="checkbox-label">
-              <input v-model="hasSi" type="checkbox" class="accent-[var(--primary)]" />
+              <input v-model="hasSi" type="checkbox" class="si-checkbox" />
               <span>已按社会医疗保险 (社保/医保) 结算</span>
             </label>
           </div>
@@ -392,17 +394,17 @@ async function openEvidence(item: {
     </div>
 
     <!-- 右侧：测算结果展示区 -->
-    <div class="result-panel glass">
+    <div class="result-panel">
       <div v-if="!claimResult && !isSimulating" class="empty-state">
-        <HeartPulse class="w-12 h-12 text-[var(--text-3)] mb-2 opacity-50" />
-        <div class="text-[var(--text-2)] font-medium">请在左侧填写或选择出险情景并开始测算</div>
-        <div class="text-[var(--text-3)] text-xs mt-1">系统将基于保单条款顺序抵扣并绘制费用瀑布图</div>
+        <HeartPulse class="w-12 h-12 text-muted mb-2 opacity-50" />
+        <div class="text-muted font-medium">请在左侧填写或选择出险情景并开始测算</div>
+        <div class="text-muted text-xs mt-1">系统将基于保单条款顺序抵扣并绘制费用瀑布图</div>
       </div>
 
       <div v-else-if="isSimulating" class="loading-state">
-        <Sparkles class="w-8 h-8 text-[var(--primary)] animate-spin mb-3" />
-        <div class="text-[var(--text-1)] font-medium">大模型正在提取出险事实与匹配保单责任...</div>
-        <div class="text-[var(--text-3)] text-xs mt-1">纯代码引擎将根据等待期、免赔额与比例精确计算区间</div>
+        <Sparkles class="w-8 h-8 text-ok animate-spin mb-3" />
+        <div class="text-default font-medium">大模型正在提取出险事实与匹配保单责任...</div>
+        <div class="text-muted text-xs mt-1">纯代码引擎将根据等待期、免赔额与比例精确计算区间</div>
       </div>
 
       <!-- 结果详情区 -->
@@ -411,11 +413,11 @@ async function openEvidence(item: {
         <div class="summary-cards-grid">
           <div class="summary-card">
             <div class="card-label">总医疗费用</div>
-            <div class="card-value font-mono">¥{{ totalCost.toLocaleString() }}</div>
+            <div class="card-value font-mono">¥{{ Number(totalCost || 0).toLocaleString() }}</div>
           </div>
           <div class="summary-card">
             <div class="card-label">预估个人最终自付</div>
-            <div class="card-value text-[var(--danger)] font-mono">
+            <div class="card-value text-danger font-mono">
               ¥{{ claimResult.out_of_pocket_low.toLocaleString() }}
               <span v-if="claimResult.out_of_pocket_low !== claimResult.out_of_pocket_high">
                 ~ ¥{{ claimResult.out_of_pocket_high.toLocaleString() }}
@@ -424,7 +426,7 @@ async function openEvidence(item: {
           </div>
           <div v-if="claimResult.lump_sums?.length" class="summary-card">
             <div class="card-label">定额给付赔偿金 (重疾/身故)</div>
-            <div class="card-value text-[var(--ok)] font-mono">
+            <div class="card-value text-ok font-mono">
               ¥{{ claimResult.lump_sums.reduce((acc, l) => acc + l.amount, 0).toLocaleString() }}
             </div>
           </div>
@@ -433,7 +435,7 @@ async function openEvidence(item: {
         <!-- 费用瀑布图 -->
         <div class="chart-section glass">
           <div class="section-title">
-            <Receipt class="w-4 h-4 mr-1 text-[var(--primary)]" />
+            <Receipt class="w-4 h-4 mr-1 text-ok" />
             费用抵扣与赔付瀑布图 (点击柱段查看条款依据)
           </div>
           <WaterfallChart
@@ -447,7 +449,7 @@ async function openEvidence(item: {
         <!-- 参与赔付的责任项清单 -->
         <div class="breakdown-section">
           <div class="section-title">
-            <ShieldCheck class="w-4 h-4 mr-1 text-[var(--primary)]" />
+            <ShieldCheck class="w-4 h-4 mr-1 text-ok" />
             分保单赔付明细与责任拆解
           </div>
           <div class="coverage-cards-list">
@@ -469,7 +471,7 @@ async function openEvidence(item: {
               <!-- 原文依据按钮 -->
               <div v-if="step.evidence_quote" class="cov-evidence-bar">
                 <button class="evidence-link-btn" @click="openEvidence(step)">
-                  <FileCheck class="w-3.5 h-3.5 mr-1 text-[var(--primary)]" />
+                  <FileCheck class="w-3.5 h-3.5 mr-1 text-ok" />
                   <span>条款依据: “{{ step.evidence_quote.slice(0, 32) }}...”</span>
                   <ChevronRight class="w-3 h-3 ml-1" />
                 </button>
@@ -480,7 +482,7 @@ async function openEvidence(item: {
 
         <!-- 定额给付型责任 (独立计算) -->
         <div v-if="claimResult.lump_sums?.length" class="breakdown-section">
-          <div class="section-title text-[var(--ok)]">
+          <div class="section-title text-ok">
             <Sparkles class="w-4 h-4 mr-1" />
             定额给付责任 (不抵扣医疗费用)
           </div>
@@ -495,14 +497,14 @@ async function openEvidence(item: {
                   <span class="cov-title">{{ l.coverage_name }}</span>
                   <span class="cov-policy">({{ l.policy_name }})</span>
                 </div>
-                <div class="cov-amount font-mono text-[var(--ok)]">
+                <div class="cov-amount font-mono text-ok">
                   全额给付 ¥{{ l.amount.toLocaleString() }}
                 </div>
               </div>
               <div class="cov-note">{{ l.note }}</div>
               <div v-if="l.evidence_quote" class="cov-evidence-bar">
                 <button class="evidence-link-btn" @click="openEvidence(l)">
-                  <FileCheck class="w-3.5 h-3.5 mr-1 text-[var(--primary)]" />
+                  <FileCheck class="w-3.5 h-3.5 mr-1 text-ok" />
                   <span>条款依据: “{{ l.evidence_quote.slice(0, 32) }}...”</span>
                   <ChevronRight class="w-3 h-3 ml-1" />
                 </button>
@@ -513,7 +515,7 @@ async function openEvidence(item: {
 
         <!-- 等待期排除项 -->
         <div v-if="claimResult.excluded?.length" class="breakdown-section">
-          <div class="section-title text-[var(--warning)]">
+          <div class="section-title text-pending">
             <AlertCircle class="w-4 h-4 mr-1" />
             排除责任项 (等待期内出险)
           </div>
@@ -521,7 +523,7 @@ async function openEvidence(item: {
             <div v-for="(ex, eIdx) in claimResult.excluded" :key="eIdx" class="excluded-item">
               <div class="excluded-header">
                 <span class="font-medium">{{ ex.coverage_name }}</span>
-                <span class="text-xs text-[var(--text-3)]">({{ ex.policy_name }})</span>
+                <span class="text-xs text-muted">({{ ex.policy_name }})</span>
               </div>
               <div class="excluded-reason">{{ ex.reason }}</div>
             </div>
@@ -531,7 +533,7 @@ async function openEvidence(item: {
         <!-- 确认事项与材料清单 -->
         <div class="info-columns-grid">
           <div class="info-card glass">
-            <div class="info-card-title text-[var(--amber)]">
+            <div class="info-card-title text-pending">
               <AlertCircle class="w-4 h-4 mr-1" />
               向保险公司确认事项
             </div>
@@ -543,7 +545,7 @@ async function openEvidence(item: {
           </div>
 
           <div class="info-card glass">
-            <div class="info-card-title text-[var(--primary)]">
+            <div class="info-card-title text-ok">
               <FileCheck class="w-4 h-4 mr-1" />
               建议准备理赔材料
             </div>
@@ -580,6 +582,44 @@ async function openEvidence(item: {
 </template>
 
 <style scoped>
+/* 行内小图标尺寸、间距与文本颜色工具类（本文件专用，替代此前失效的 Tailwind 类名） */
+.w-3 { width: 12px; }
+.h-3 { height: 12px; }
+.w-3\.5 { width: 14px; }
+.h-3\.5 { height: 14px; }
+.w-4 { width: 16px; }
+.h-4 { height: 16px; }
+.w-5 { width: 20px; }
+.h-5 { height: 20px; }
+.w-8 { width: 32px; }
+.h-8 { height: 32px; }
+.w-12 { width: 48px; }
+.h-12 { height: 48px; }
+.w-32 { width: 128px; }
+.w-36 { width: 144px; }
+.flex-1 { flex: 1; }
+.flex-shrink-0 { flex-shrink: 0; }
+.mr-1 { margin-right: 4px; }
+.mr-1\.5 { margin-right: 6px; }
+.mr-2 { margin-right: 8px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.mt-1 { margin-top: 4px; }
+.ml-1 { margin-left: 4px; }
+.opacity-50 { opacity: 0.5; }
+.font-medium { font-weight: 500; }
+.text-xs { font-size: var(--fs-12); }
+.text-ok { color: var(--ok); }
+.si-checkbox { accent-color: var(--ok); }
+.text-pending { color: var(--pending); }
+.text-danger { color: var(--danger); }
+.text-muted { color: var(--text-muted); }
+.text-default { color: var(--text); }
+.animate-spin { animation: claim-page-spin 1s linear infinite; }
+@keyframes claim-page-spin {
+  to { transform: rotate(360deg); }
+}
+
 .claim-page-layout {
   display: flex;
   height: calc(100vh - 64px);
@@ -587,15 +627,15 @@ async function openEvidence(item: {
   overflow: hidden;
 }
 
-/* 左侧表单面板 */
+/* 左侧表单面板：内部可滚动，按规范不使用模糊玻璃，改用实色半透明 */
 .form-panel {
   width: 440px;
   min-width: 360px;
   height: 100%;
   overflow-y: auto;
   padding: var(--sp-5);
-  background: var(--surface-1);
-  border-right: 1px solid var(--border-subtle);
+  background: var(--glass-fill-strong);
+  border-right: 1px solid var(--glass-stroke);
   display: flex;
   flex-direction: column;
 }
@@ -607,29 +647,29 @@ async function openEvidence(item: {
 .panel-title {
   display: flex;
   align-items: center;
-  font-size: var(--fs-title-md);
+  font-size: var(--fs-23);
   font-weight: 600;
-  color: var(--text-1);
+  color: var(--text);
   margin-bottom: var(--sp-1);
 }
 
 .panel-desc {
-  font-size: var(--fs-body-xs);
-  color: var(--text-3);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
   line-height: 1.4;
 }
 
 .preset-box {
   background: rgba(42, 143, 130, 0.05);
-  border: 1px dashed var(--border-subtle);
+  border: 1px dashed var(--glass-stroke);
   padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   margin-bottom: var(--sp-4);
 }
 
 .preset-title {
   font-size: 11px;
-  color: var(--text-3);
+  color: var(--text-muted);
   display: block;
   margin-bottom: var(--sp-1);
 }
@@ -643,16 +683,16 @@ async function openEvidence(item: {
 .preset-btn {
   padding: 3px 8px;
   border-radius: 4px;
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-1);
+  border: 1px solid var(--glass-stroke);
+  background: var(--glass-fill);
   font-size: 11px;
-  color: var(--primary);
+  color: var(--ok);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .preset-btn:hover {
-  background: var(--primary);
+  background: var(--ok);
   color: #fff;
 }
 
@@ -676,24 +716,28 @@ async function openEvidence(item: {
 .form-label {
   display: flex;
   align-items: center;
-  font-size: var(--fs-body-xs);
+  font-size: var(--fs-12);
   font-weight: 500;
-  color: var(--text-2);
+  color: var(--text-muted);
 }
 
 .form-input {
   width: 100%;
   padding: 8px 12px;
-  border-radius: var(--rad-control);
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-2);
-  color: var(--text-1);
-  font-size: var(--fs-body-sm);
-  outline: none;
+  border-radius: var(--r-control);
+  border: 1px solid var(--glass-stroke);
+  background: var(--glass-fill-strong);
+  color: var(--text);
+  font-size: var(--fs-14);
 }
 
 .form-input:focus {
-  border-color: var(--primary);
+  border-color: var(--ok);
+}
+
+.form-input:focus-visible {
+  outline: 2px solid var(--ok);
+  outline-offset: 2px;
 }
 
 .textarea-input {
@@ -703,8 +747,8 @@ async function openEvidence(item: {
 
 .radio-tabs {
   display: flex;
-  border-radius: var(--rad-control);
-  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-control);
+  border: 1px solid var(--glass-stroke);
   overflow: hidden;
 }
 
@@ -713,21 +757,21 @@ async function openEvidence(item: {
   padding: 6px 0;
   text-align: center;
   border: none;
-  background: var(--surface-2);
-  font-size: var(--fs-body-xs);
-  color: var(--text-2);
+  background: var(--glass-fill-strong);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
   cursor: pointer;
 }
 
 .radio-tab.active {
-  background: var(--primary);
+  background: var(--ok);
   color: #fff;
   font-weight: 500;
 }
 
 .si-box {
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--rad-control);
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--r-control);
   padding: var(--sp-3);
   background: rgba(0, 0, 0, 0.01);
 }
@@ -736,9 +780,9 @@ async function openEvidence(item: {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  font-size: var(--fs-body-xs);
+  font-size: var(--fs-12);
   font-weight: 500;
-  color: var(--text-1);
+  color: var(--text);
   cursor: pointer;
 }
 
@@ -753,11 +797,11 @@ async function openEvidence(item: {
   align-items: center;
   justify-content: center;
   padding: 12px;
-  background: var(--primary);
+  background: var(--ok);
   color: #fff;
   border: none;
-  border-radius: var(--rad-control);
-  font-size: var(--fs-body-md);
+  border-radius: var(--r-control);
+  font-size: var(--fs-16);
   font-weight: 600;
   cursor: pointer;
   margin-top: var(--sp-2);
@@ -775,7 +819,7 @@ async function openEvidence(item: {
   height: 100%;
   overflow-y: auto;
   padding: var(--sp-5);
-  background: var(--surface-2);
+  background: var(--glass-fill-strong);
 }
 
 .empty-state,
@@ -804,36 +848,37 @@ async function openEvidence(item: {
 
 .summary-card {
   padding: var(--sp-4);
-  border-radius: var(--rad-control);
-  background: var(--surface-1);
-  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-control);
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-stroke);
 }
 
 .card-label {
-  font-size: var(--fs-body-xs);
-  color: var(--text-3);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
   margin-bottom: var(--sp-1);
 }
 
 .card-value {
-  font-size: var(--fs-title-md);
+  font-size: var(--fs-23);
   font-weight: 700;
-  color: var(--text-1);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 .chart-section {
   padding: var(--sp-4);
-  border-radius: var(--rad-panel);
-  background: var(--surface-1);
-  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-panel);
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-stroke);
 }
 
 .section-title {
   display: flex;
   align-items: center;
-  font-size: var(--fs-body-sm);
+  font-size: var(--fs-14);
   font-weight: 600;
-  color: var(--text-1);
+  color: var(--text);
   margin-bottom: var(--sp-3);
 }
 
@@ -845,9 +890,9 @@ async function openEvidence(item: {
 
 .coverage-card {
   padding: var(--sp-3);
-  border-radius: var(--rad-control);
-  background: var(--surface-1);
-  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-control);
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-stroke);
 }
 
 .cov-card-header {
@@ -859,31 +904,32 @@ async function openEvidence(item: {
 
 .cov-title {
   font-weight: 600;
-  font-size: var(--fs-body-sm);
-  color: var(--text-1);
+  font-size: var(--fs-14);
+  color: var(--text);
 }
 
 .cov-policy {
-  font-size: var(--fs-body-xs);
-  color: var(--text-3);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
   margin-left: var(--sp-1);
 }
 
 .cov-amount {
   font-weight: 600;
-  color: var(--primary);
-  font-size: var(--fs-body-sm);
+  color: var(--ok);
+  font-size: var(--fs-14);
+  font-variant-numeric: tabular-nums;
 }
 
 .cov-note {
-  font-size: var(--fs-body-xs);
-  color: var(--text-2);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
 }
 
 .cov-evidence-bar {
   margin-top: var(--sp-2);
   padding-top: var(--sp-1);
-  border-top: 1px dashed var(--border-subtle);
+  border-top: 1px dashed var(--glass-stroke);
 }
 
 .evidence-link-btn {
@@ -891,8 +937,8 @@ async function openEvidence(item: {
   align-items: center;
   background: transparent;
   border: none;
-  font-size: var(--fs-body-xs);
-  color: var(--primary);
+  font-size: var(--fs-12);
+  color: var(--ok);
   cursor: pointer;
   padding: 2px 0;
 }
@@ -913,22 +959,22 @@ async function openEvidence(item: {
 
 .excluded-item {
   padding: var(--sp-3);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   background: rgba(208, 140, 54, 0.08);
-  border: 1px solid var(--warning);
+  border: 1px solid var(--pending);
 }
 
 .excluded-header {
   display: flex;
   justify-content: space-between;
-  font-size: var(--fs-body-sm);
-  color: var(--warning);
+  font-size: var(--fs-14);
+  color: var(--pending);
   margin-bottom: var(--sp-1);
 }
 
 .excluded-reason {
-  font-size: var(--fs-body-xs);
-  color: var(--text-2);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
 }
 
 .info-columns-grid {
@@ -939,15 +985,15 @@ async function openEvidence(item: {
 
 .info-card {
   padding: var(--sp-4);
-  border-radius: var(--rad-control);
-  background: var(--surface-1);
-  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-control);
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-stroke);
 }
 
 .info-card-title {
   display: flex;
   align-items: center;
-  font-size: var(--fs-body-xs);
+  font-size: var(--fs-12);
   font-weight: 600;
   margin-bottom: var(--sp-2);
 }
@@ -955,8 +1001,8 @@ async function openEvidence(item: {
 .info-list {
   list-style-type: disc;
   padding-left: var(--sp-4);
-  font-size: var(--fs-body-xs);
-  color: var(--text-2);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
   line-height: 1.6;
 }
 
@@ -964,10 +1010,10 @@ async function openEvidence(item: {
   display: flex;
   align-items: flex-start;
   padding: var(--sp-3);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   background: rgba(0, 0, 0, 0.03);
   font-size: 11px;
-  color: var(--text-3);
+  color: var(--text-muted);
   line-height: 1.5;
 }
 
@@ -985,8 +1031,8 @@ async function openEvidence(item: {
   width: 650px;
   max-width: 90vw;
   height: 100%;
-  background: var(--surface-1);
-  border-left: 1px solid var(--border-subtle);
+  background: var(--glass-fill);
+  border-left: 1px solid var(--glass-stroke);
   display: flex;
   flex-direction: column;
 }
@@ -1006,6 +1052,22 @@ async function openEvidence(item: {
   }
   .info-columns-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* 手机 (<600px)：原文阅读抽屉改为从底部滑出的全屏抽屉 */
+@media (max-width: 599px) {
+  .drawer-overlay {
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .drawer-container {
+    width: 100%;
+    max-width: 100%;
+    height: 90vh;
+    border-left: none;
+    border-top: 1px solid var(--glass-stroke);
+    border-radius: var(--r-panel) var(--r-panel) 0 0;
   }
 }
 </style>

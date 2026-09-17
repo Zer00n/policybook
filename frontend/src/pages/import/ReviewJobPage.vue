@@ -111,7 +111,7 @@ onMounted(() => {
 })
 
 // 字段点击高亮定位 (FLIP)
-function focusFieldEvidence(fieldItem: any, event?: MouseEvent) {
+function focusFieldEvidence(fieldItem: any, event?: MouseEvent | KeyboardEvent) {
   if (!fieldItem || !fieldItem.quote) return
   activeHighlight.value = {
     page_no: fieldItem.page_no || 1,
@@ -313,7 +313,10 @@ function getStatusBadge(status: string) {
               :key="fKey"
               class="field-card glass-subtle"
               :class="{ 'has-conflict': fItem.status === 'conflict' }"
+              tabindex="0"
               @click="focusFieldEvidence(fItem, $event)"
+              @keydown.enter="focusFieldEvidence(fItem, $event)"
+              @keydown.space.prevent="focusFieldEvidence(fItem, $event)"
             >
               <div class="field-top">
                 <span class="field-label">{{ fItem.label || fKey }}</span>
@@ -364,7 +367,10 @@ function getStatusBadge(status: string) {
             <div
               v-if="reviewData?.parties?.applicant"
               class="field-card glass-subtle"
+              tabindex="0"
               @click="focusFieldEvidence(reviewData.parties.applicant, $event)"
+              @keydown.enter="focusFieldEvidence(reviewData.parties.applicant, $event)"
+              @keydown.space.prevent="focusFieldEvidence(reviewData.parties.applicant, $event)"
             >
               <div class="field-top">
                 <span class="field-label">投保人</span>
@@ -415,7 +421,10 @@ function getStatusBadge(status: string) {
               v-for="(ins, idx) in reviewData?.parties?.insureds || []"
               :key="idx"
               class="field-card glass-subtle"
+              tabindex="0"
               @click="focusFieldEvidence(ins, $event)"
+              @keydown.enter="focusFieldEvidence(ins, $event)"
+              @keydown.space.prevent="focusFieldEvidence(ins, $event)"
             >
               <div class="field-top">
                 <span class="field-label">被保险人 {{ idx + 1 }}</span>
@@ -505,7 +514,11 @@ function getStatusBadge(status: string) {
               v-for="ex in reviewData?.exclusions || []"
               :key="ex.id"
               class="exclusion-card glass-subtle"
+              role="button"
+              tabindex="0"
               @click="focusFieldEvidence(ex, $event)"
+              @keydown.enter="focusFieldEvidence(ex, $event)"
+              @keydown.space.prevent="focusFieldEvidence(ex, $event)"
             >
               <div class="ex-explanation">
                 <span class="ex-tag">免责释义</span>
@@ -602,7 +615,7 @@ function getStatusBadge(status: string) {
 
 .doc-title {
   margin: 0;
-  font-size: var(--fs-18);
+  font-size: var(--fs-19);
   font-weight: 600;
   color: var(--text);
 }
@@ -611,7 +624,7 @@ function getStatusBadge(status: string) {
   font-size: var(--fs-12);
   background: var(--glass-fill-strong);
   padding: 2px 8px;
-  border-radius: var(--r-badge);
+  border-radius: var(--r-pill);
   color: var(--text-muted);
 }
 
@@ -627,7 +640,7 @@ function getStatusBadge(status: string) {
   gap: 6px;
   font-size: var(--fs-12);
   padding: 4px 12px;
-  border-radius: var(--r-badge);
+  border-radius: var(--r-pill);
   font-weight: 500;
 }
 
@@ -720,7 +733,7 @@ function getStatusBadge(status: string) {
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text-muted);
   cursor: pointer;
   display: inline-flex;
@@ -750,7 +763,7 @@ function getStatusBadge(status: string) {
   gap: 10px;
   padding: 10px 14px;
   border-radius: var(--r-control);
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text-muted);
   border: 1px dashed var(--glass-stroke);
   background: var(--glass-fill-strong);
@@ -788,12 +801,16 @@ function getStatusBadge(status: string) {
   background: var(--c-paper);
   color: var(--text);
   font-size: var(--fs-12);
-  outline: none;
   cursor: pointer;
 }
 
 .member-select:focus {
   border-color: var(--ok);
+}
+
+.member-select:focus-visible {
+  outline: 2px solid var(--ok);
+  outline-offset: 2px;
 }
 
 .field-card {
@@ -821,7 +838,7 @@ function getStatusBadge(status: string) {
 }
 
 .field-label {
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text-muted);
 }
 
@@ -834,7 +851,7 @@ function getStatusBadge(status: string) {
 .status-badge {
   font-size: var(--fs-12);
   padding: 2px 6px;
-  border-radius: var(--r-badge);
+  border-radius: var(--r-pill);
 }
 
 .badge-ok {
@@ -877,7 +894,7 @@ function getStatusBadge(status: string) {
 }
 
 .field-val {
-  font-size: var(--fs-15);
+  font-size: var(--fs-14);
   font-weight: 600;
   color: var(--text);
   font-variant-numeric: tabular-nums;
@@ -905,7 +922,7 @@ function getStatusBadge(status: string) {
 .quote-card {
   margin-top: 8px;
   padding: 6px 12px;
-  border-left: 2.5px solid var(--ok);
+  border-left: 2px solid var(--ok);
   background: color-mix(in oklch, var(--c-paper) 40%, transparent);
   border-radius: 0 var(--r-control) var(--r-control) 0;
 }
@@ -915,9 +932,9 @@ function getStatusBadge(status: string) {
 }
 
 .quote-text {
-  font-size: var(--fs-13);
+  font-size: var(--fs-14);
   color: var(--text);
-  line-height: 1.5;
+  line-height: var(--lh-quote);
 }
 
 .quote-footer {
@@ -949,7 +966,7 @@ function getStatusBadge(status: string) {
 }
 
 .cov-name {
-  font-size: var(--fs-15);
+  font-size: var(--fs-14);
   font-weight: 600;
   color: var(--text);
 }
@@ -958,7 +975,7 @@ function getStatusBadge(status: string) {
   font-size: var(--fs-12);
   padding: 2px 8px;
   background: var(--glass-fill);
-  border-radius: var(--r-badge);
+  border-radius: var(--r-pill);
   color: var(--text-muted);
 }
 
@@ -973,7 +990,7 @@ function getStatusBadge(status: string) {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
 }
 
 .prop-k {
@@ -1031,13 +1048,13 @@ function getStatusBadge(status: string) {
 
 .modal-title {
   margin: 0 0 4px;
-  font-size: var(--fs-18);
+  font-size: var(--fs-19);
   font-weight: 600;
   color: var(--text);
 }
 
 .modal-sub {
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text-muted);
   margin-bottom: 18px;
 }
@@ -1048,7 +1065,7 @@ function getStatusBadge(status: string) {
 
 .input-label {
   display: block;
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   color: var(--text-muted);
   margin-bottom: 6px;
 }
@@ -1068,6 +1085,7 @@ function getStatusBadge(status: string) {
 .text-input:focus {
   border-color: var(--ok);
   outline: 2px solid var(--ok);
+  outline-offset: 2px;
 }
 
 .modal-actions {

@@ -98,38 +98,38 @@ onMounted(() => {
       </div>
     </header>
 
-    <!-- 4 核心指标卡 (DEV-GUIDE 7.7) -->
-    <section class="metrics-grid">
+    <!-- 4 核心指标：合并为单个玻璃面板，内部以分隔线区分 (同屏最多 3 个玻璃大面板) -->
+    <section class="glass metrics-grid">
       <!-- 1. 年保费合计 -->
-      <div class="glass metric-card">
+      <div class="metric-card">
         <div class="metric-icon metric-icon--teal">
           <Coins :size="22" />
         </div>
         <div class="metric-info">
           <span class="metric-label">全家年保费合计</span>
           <div class="metric-value-row">
-            <span class="metric-value">¥{{ metrics.total_annual_premium_yuan.toLocaleString() }}</span>
+            <span class="metric-value num">¥{{ metrics.total_annual_premium_yuan.toLocaleString() }}</span>
             <span class="metric-unit">元/年</span>
           </div>
         </div>
       </div>
 
       <!-- 2. 生效保单 -->
-      <div class="glass metric-card">
-        <div class="metric-icon metric-icon--blue">
+      <div class="metric-card">
+        <div class="metric-icon metric-icon--teal">
           <ShieldCheck :size="22" />
         </div>
         <div class="metric-info">
           <span class="metric-label">当前生效保单</span>
           <div class="metric-value-row">
-            <span class="metric-value">{{ metrics.active_policy_count }}</span>
+            <span class="metric-value num">{{ metrics.active_policy_count }}</span>
             <span class="metric-unit">份</span>
           </div>
         </div>
       </div>
 
       <!-- 3. 30天内到期 -->
-      <div class="glass metric-card">
+      <div class="metric-card">
         <div
           class="metric-icon"
           :class="metrics.expiring_30d_count > 0 ? 'metric-icon--amber' : 'metric-icon--subtle'"
@@ -140,7 +140,7 @@ onMounted(() => {
           <span class="metric-label">30 天内到期</span>
           <div class="metric-value-row">
             <span
-              class="metric-value"
+              class="metric-value num"
               :class="{ 'text-warning': metrics.expiring_30d_count > 0 }"
             >
               {{ metrics.expiring_30d_count }}
@@ -151,7 +151,7 @@ onMounted(() => {
       </div>
 
       <!-- 4. 有空档成员 -->
-      <div class="glass metric-card">
+      <div class="metric-card">
         <div
           class="metric-icon"
           :class="metrics.gap_member_count > 0 ? 'metric-icon--danger' : 'metric-icon--subtle'"
@@ -162,7 +162,7 @@ onMounted(() => {
           <span class="metric-label">断保空档预警</span>
           <div class="metric-value-row">
             <span
-              class="metric-value"
+              class="metric-value num"
               :class="{ 'text-danger': metrics.gap_member_count > 0 }"
             >
               {{ metrics.gap_member_count }}
@@ -190,10 +190,10 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- 待办清单与快捷操作栏 -->
-    <div class="content-split">
+    <!-- 待办清单与快捷操作栏：合并为单个玻璃面板，内部以分隔线区分两个区块 -->
+    <div class="glass content-split">
       <!-- 待办列表 -->
-      <div class="glass todos-card">
+      <div class="todos-card">
         <div class="card-header">
           <div class="header-left">
             <AlertTriangle :size="18" class="text-warning" />
@@ -208,7 +208,11 @@ onMounted(() => {
             :key="todo.id"
             class="todo-item"
             :class="`todo-item--${todo.severity}`"
+            role="button"
+            tabindex="0"
             @click="handleTodoClick(todo)"
+            @keydown.enter="handleTodoClick(todo)"
+            @keydown.space.prevent="handleTodoClick(todo)"
           >
             <div class="todo-main">
               <div class="todo-title-row">
@@ -228,7 +232,7 @@ onMounted(() => {
       </div>
 
       <!-- 快捷入口 (DEV-GUIDE 7.7) -->
-      <div class="glass quick-actions-card">
+      <div class="quick-actions-card">
         <div class="card-header">
           <h3 class="card-title">快捷入口</h3>
         </div>
@@ -269,13 +273,6 @@ onMounted(() => {
         </div>
       </div>
     </div>
-
-    <!-- 全站固定免责说明 (红线 9) -->
-    <footer class="legal-disclaimer">
-      <p>
-        免责说明：保单簿根据你上传的合同文本整理信息，帮助你理解条款和估算大致范围。所有结论以保险公司的核定和合同原文为准，本工具不构成投保建议、核保意见或理赔承诺。
-      </p>
-    </footer>
   </div>
 </template>
 
@@ -304,11 +301,10 @@ onMounted(() => {
   margin-top: 4px;
 }
 
-/* 4 Metrics Grid */
+/* 4 Metrics Grid：单个玻璃面板，内部用分隔线区分 4 个指标 */
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: var(--sp-3);
 }
 
 .metric-card {
@@ -316,6 +312,11 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
+  border-right: 1px solid var(--glass-stroke);
+}
+
+.metric-card:last-child {
+  border-right: none;
 }
 
 .metric-icon {
@@ -329,13 +330,8 @@ onMounted(() => {
 }
 
 .metric-icon--teal {
-  background: color-mix(in oklch, var(--primary) 15%, transparent);
-  color: var(--primary);
-}
-
-.metric-icon--blue {
-  background: color-mix(in oklch, #3B82F6 15%, transparent);
-  color: #3B82F6;
+  background: color-mix(in oklch, var(--ok) 15%, transparent);
+  color: var(--ok);
 }
 
 .metric-icon--amber {
@@ -349,7 +345,7 @@ onMounted(() => {
 }
 
 .metric-icon--subtle {
-  background: var(--bg-surface);
+  background: var(--glass-fill-strong);
   color: var(--text-muted);
 }
 
@@ -371,14 +367,14 @@ onMounted(() => {
 }
 
 .metric-value {
-  font-size: var(--fs-22);
+  font-size: var(--fs-23);
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .metric-unit {
   font-size: var(--fs-12);
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .text-warning {
@@ -409,8 +405,8 @@ onMounted(() => {
 .spinner {
   width: 28px;
   height: 28px;
-  border: 3px solid var(--border-subtle);
-  border-top-color: var(--primary);
+  border: 3px solid var(--glass-stroke);
+  border-top-color: var(--ok);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -419,11 +415,14 @@ onMounted(() => {
   to { transform: rotate(360deg); }
 }
 
-/* Split Section: Todos & Quick Actions */
+/* Split Section: Todos & Quick Actions：单个玻璃面板，内部用分隔线区分两栏 */
 .content-split {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
-  gap: var(--sp-4);
+}
+
+.todos-card {
+  border-right: 1px solid var(--glass-stroke);
 }
 
 .card-header {
@@ -431,7 +430,7 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding-bottom: var(--sp-3);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--glass-stroke);
 }
 
 .header-left {
@@ -468,8 +467,8 @@ onMounted(() => {
 .todo-item {
   padding: 10px 14px;
   border-radius: var(--r-control);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  background: var(--glass-fill-strong);
+  border: 1px solid var(--glass-stroke);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -479,8 +478,8 @@ onMounted(() => {
 }
 
 .todo-item:hover {
-  border-color: var(--primary);
-  background: color-mix(in oklch, var(--primary) 5%, var(--bg-surface));
+  border-color: var(--ok);
+  background: color-mix(in oklch, var(--ok) 5%, var(--glass-fill-strong));
 }
 
 .todo-item--urgent {
@@ -492,7 +491,7 @@ onMounted(() => {
 }
 
 .todo-item--info {
-  border-left: 3px solid var(--primary);
+  border-left: 3px solid var(--ok);
 }
 
 .todo-main {
@@ -509,9 +508,9 @@ onMounted(() => {
 }
 
 .todo-title {
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .todo-date {
@@ -521,7 +520,7 @@ onMounted(() => {
 
 .todo-desc {
   font-size: var(--fs-12);
-  color: var(--text-secondary);
+  color: var(--text-muted);
   margin: 0;
   line-height: 1.4;
 }
@@ -538,7 +537,7 @@ onMounted(() => {
   justify-content: center;
   gap: var(--sp-2);
   color: var(--text-muted);
-  font-size: var(--fs-13);
+  font-size: var(--fs-12);
 }
 
 /* Quick Actions List */
@@ -554,16 +553,16 @@ onMounted(() => {
   gap: var(--sp-3);
   padding: 12px 14px;
   border-radius: var(--r-control);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  background: var(--glass-fill-strong);
+  border: 1px solid var(--glass-stroke);
   text-decoration: none;
   color: inherit;
   transition: all 0.15s ease;
 }
 
 .quick-action-btn:hover {
-  border-color: var(--primary);
-  background: color-mix(in oklch, var(--primary) 5%, var(--bg-surface));
+  border-color: var(--ok);
+  background: color-mix(in oklch, var(--ok) 5%, var(--glass-fill-strong));
 }
 
 .action-icon {
@@ -577,13 +576,13 @@ onMounted(() => {
 }
 
 .action-import .action-icon {
-  background: color-mix(in oklch, var(--primary) 15%, transparent);
-  color: var(--primary);
+  background: color-mix(in oklch, var(--ok) 15%, transparent);
+  color: var(--ok);
 }
 
 .action-ask .action-icon {
-  background: color-mix(in oklch, #3B82F6 15%, transparent);
-  color: #3B82F6;
+  background: color-mix(in oklch, var(--ai) 15%, transparent);
+  color: var(--ai);
 }
 
 .action-claim .action-icon {
@@ -601,7 +600,7 @@ onMounted(() => {
 .action-name {
   font-size: var(--fs-14);
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .action-hint {
@@ -613,35 +612,40 @@ onMounted(() => {
   color: var(--text-muted);
 }
 
-/* Legal Disclaimer */
-.legal-disclaimer {
-  padding: var(--sp-3) var(--sp-4);
-  background: color-mix(in oklch, var(--primary) 5%, transparent);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--r-control);
-  font-size: var(--fs-12);
-  color: var(--text-muted);
-  line-height: 1.6;
-  text-align: center;
-}
-
-.legal-disclaimer p {
-  margin: 0;
-}
-
 /* Responsive Breakpoints */
 @media (max-width: 1024px) {
   .metrics-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .metric-card {
+    border-right: 1px solid var(--glass-stroke);
+    border-bottom: 1px solid var(--glass-stroke);
+  }
+  .metric-card:nth-child(2n) {
+    border-right: none;
+  }
+  .metric-card:nth-last-child(-n+2) {
+    border-bottom: none;
+  }
   .content-split {
     grid-template-columns: 1fr;
+  }
+  .todos-card {
+    border-right: none;
+    border-bottom: 1px solid var(--glass-stroke);
   }
 }
 
 @media (max-width: 600px) {
   .metrics-grid {
     grid-template-columns: 1fr;
+  }
+  .metric-card {
+    border-right: none;
+    border-bottom: 1px solid var(--glass-stroke);
+  }
+  .metric-card:last-child {
+    border-bottom: none;
   }
 }
 </style>

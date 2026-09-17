@@ -9,6 +9,8 @@ import {
   TooltipComponent,
   LegendComponent,
 } from 'echarts/components'
+import { getCssVar } from '@/utils/theme-color'
+import { useThemeStore } from '@/stores/theme'
 
 use([
   CanvasRenderer,
@@ -42,18 +44,30 @@ const emit = defineEmits<{
   (e: 'selectStep', step: WaterfallStep): void
 }>()
 
+const themeStore = useThemeStore()
+
 const chartOption = computed(() => {
+  // 依赖 isDark 使该 computed 在主题切换时重新求值，从而重新读取 CSS 变量
+  void themeStore.isDark
+
   if (!props.steps || props.steps.length === 0) {
     return {}
   }
+
+  const colorRisk = getCssVar('--risk', '#C8443B')
+  const colorPending = getCssVar('--pending', '#C98217')
+  const colorOk = getCssVar('--ok', '#2A8F82')
+  const colorTextMuted = getCssVar('--text-muted', '#5D6B68')
+  const colorText = getCssVar('--text', '#14233A')
+  const colorStroke = getCssVar('--glass-stroke', 'rgba(0,0,0,0.1)')
 
   // 构造瀑布图数据序列
   // 步骤标签
   const categories: string[] = []
   const baseData: number[] = []
   const valueData: any[] = []
-
-  let prevRemaining = 0
+  // 与 valueData 对齐的区间上限，供顶部标签与 tooltip 展示低~高区间（不丢弃 amount_high/remaining_high）
+  const highData: number[] = []
 
   props.steps.forEach((step, idx) => {
     categories.push(step.label)
@@ -64,20 +78,20 @@ const chartOption = computed(() => {
       baseData.push(0)
       valueData.push({
         value: amt,
-        itemStyle: { color: '#C25B4E', borderRadius: [4, 4, 0, 0] },
+        itemStyle: { color: colorRisk, borderRadius: [4, 4, 0, 0] },
       })
-      prevRemaining = step.remaining_low
+      highData.push(step.amount_high)
     } else {
       // 扣减项（社保或保单赔付）：柱顶在 prevRemaining，柱底在 step.remaining_low
       const rem = step.remaining_low
       baseData.push(rem)
       const isSi = step.label.includes('社保')
-      const barColor = isSi ? '#D08C36' : '#2A8F82'
+      const barColor = isSi ? colorPending : colorOk
       valueData.push({
         value: amt,
         itemStyle: { color: barColor, borderRadius: [4, 4, 4, 4] },
       })
-      prevRemaining = rem
+      highData.push(step.amount_high)
     }
   })
 
@@ -86,8 +100,13 @@ const chartOption = computed(() => {
   baseData.push(0)
   valueData.push({
     value: props.outOfPocketLow,
-    itemStyle: { color: '#889895', borderRadius: [4, 4, 0, 0] },
+    itemStyle: { color: colorTextMuted, borderRadius: [4, 4, 0, 0] },
   })
+  highData.push(props.outOfPocketHigh)
+
+  const formatYuan = (v: number) => (v >= 10000 ? `${(v / 10000).toFixed(1)}万` : `¥${v.toLocaleString()}`)
+  const formatRange = (low: number, high: number) =>
+    low !== high ? `${formatYuan(low)} ~ ${formatYuan(high)}` : formatYuan(low)
 
   return {
     tooltip: {
@@ -100,23 +119,19 @@ const chartOption = computed(() => {
         if (idx === props.steps.length) {
           return `<div style="font-size:12px;padding:4px;">
             <div style="font-weight:600;margin-bottom:4px;">个人自付差额</div>
-            <div>金额：<b>¥${props.outOfPocketLow.toLocaleString()}</b>${
-            props.outOfPocketLow !== props.outOfPocketHigh
-              ? ` ~ ¥${props.outOfPocketHigh.toLocaleString()}`
-              : ''
-          }</div>
+            <div>金额：<b>${formatRange(props.outOfPocketLow, props.outOfPocketHigh)}</b></div>
           </div>`
         }
         if (!step) return ''
 
         let html = `<div style="font-size:12px;padding:4px;">
           <div style="font-weight:600;margin-bottom:4px;">${step.label}</div>
-          <div>抵扣金额：<b>¥${step.amount_low.toLocaleString()}</b></div>`
+          <div>抵扣金额：<b>${formatRange(step.amount_low, step.amount_high)}</b></div>`
         if (step.note) {
-          html += `<div style="color:#888;margin-top:2px;">${step.note}</div>`
+          html += `<div style="color:var(--text-muted);margin-top:2px;">${step.note}</div>`
         }
         if (step.evidence_quote) {
-          html += `<div style="color:#2A8F82;margin-top:4px;">[点击柱状可查看条款依据]</div>`
+          html += `<div style="color:var(--ok);margin-top:4px;">[点击柱状可查看条款依据]</div>`
         }
         html += `</div>`
         return html
@@ -135,20 +150,20 @@ const chartOption = computed(() => {
       axisLabel: {
         interval: 0,
         rotate: categories.length > 4 ? 20 : 0,
-        color: 'var(--text-2, #5D6B68)',
+        color: colorTextMuted,
         fontSize: 12,
       },
-      axisLine: { lineStyle: { color: 'var(--border-subtle, rgba(0,0,0,0.1))' } },
+      axisLine: { lineStyle: { color: colorStroke } },
     },
     yAxis: {
       type: 'value',
       axisLabel: {
-        formatter: (val: number) => (val >= 10000 ? `${(val / 10000).toFixed(1)}万` : `¥${val}`),
-        color: 'var(--text-3, #889895)',
+        formatter: (val: number) => formatYuan(val),
+        color: colorTextMuted,
       },
       splitLine: {
         lineStyle: {
-          color: 'var(--border-subtle, rgba(0,0,0,0.06))',
+          color: colorStroke,
           type: 'dashed',
         },
       },
@@ -179,10 +194,12 @@ const chartOption = computed(() => {
           position: 'top',
           formatter: (params: any) => {
             const v = params.value
-            return v > 0 ? (v >= 10000 ? `${(v / 10000).toFixed(1)}万` : `¥${v}`) : ''
+            if (!(v > 0)) return ''
+            const high = highData[params.dataIndex]
+            return formatRange(v, high)
           },
           fontSize: 11,
-          color: 'var(--text-1, #1B2524)',
+          color: colorText,
         },
         data: valueData,
       },
@@ -230,7 +247,7 @@ function onChartClick(params: any) {
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: var(--text-3);
-  font-size: var(--fs-body-sm);
+  color: var(--text-muted);
+  font-size: var(--fs-14);
 }
 </style>

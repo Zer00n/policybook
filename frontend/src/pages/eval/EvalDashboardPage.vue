@@ -18,7 +18,7 @@
 
     <!-- Top Comparison Metrics Cards -->
     <div v-if="comparisonRows.length > 0" class="metrics-grid">
-      <div v-for="row in comparisonRows" :key="row.run_id" class="metric-card glass-panel">
+      <div v-for="row in comparisonRows" :key="row.run_id" class="metric-card glass-subtle">
         <div class="card-tag-row">
           <span class="model-badge" :class="row.model_alias === 'evolving' ? 'badge-primary' : 'badge-secondary'">
             {{ row.model_alias === 'evolving' ? '主测模型 (Evolving)' : '基线模型 (' + (row.model_alias || 'Baseline') + ')' }}
@@ -50,7 +50,7 @@
     </div>
 
     <!-- Summary Records Table -->
-    <div class="glass-panel main-panel">
+    <div class="glass main-panel">
       <div class="panel-header">
         <div class="title-wrap">
           <Layers class="icon-md text-primary" />
@@ -110,7 +110,7 @@
 
     <!-- Task Breakdown Drawer / Modal -->
     <div v-if="selectedRun" class="modal-backdrop" @click.self="selectedRun = null">
-      <div class="modal-card glass-panel">
+      <div class="modal-card glass">
         <div class="modal-header">
           <div>
             <h3 class="modal-title">评测批次调用明细：{{ selectedRun.run_id }}</h3>
@@ -274,15 +274,15 @@ onMounted(() => {
 }
 
 .page-title {
-  font-size: var(--text-2xl);
+  font-size: var(--fs-28);
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text);
   margin-bottom: var(--sp-2);
 }
 
 .page-subtitle {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
+  font-size: var(--fs-14);
+  color: var(--text-muted);
 }
 
 .header-actions {
@@ -296,22 +296,14 @@ onMounted(() => {
   align-items: center;
   gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-4);
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-card);
-  color: var(--text-primary);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
+  border: 1px solid var(--glass-stroke);
+  background: var(--glass-fill-strong);
+  color: var(--text);
+  border-radius: var(--r-control);
+  font-size: var(--fs-14);
   cursor: pointer;
 }
 
-.glass-panel {
-  background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: var(--sp-6);
-}
 
 .metrics-grid {
   display: grid;
@@ -323,6 +315,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
+  padding: var(--sp-6);
 }
 
 .card-tag-row {
@@ -332,31 +325,31 @@ onMounted(() => {
 }
 
 .model-badge {
-  font-size: var(--text-xs);
+  font-size: var(--fs-12);
   padding: 2px 8px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-control);
   font-weight: 600;
 }
 
 .badge-primary {
   background: rgba(42, 143, 130, 0.15);
-  color: var(--color-primary);
+  color: var(--ok);
 }
 
 .badge-secondary {
-  background: rgba(59, 130, 246, 0.15);
-  color: #3b82f6;
+  background: var(--glass-fill-strong);
+  color: var(--text-muted);
 }
 
 .commit-tag {
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
 }
 
 .model-name {
-  font-size: var(--text-sm);
+  font-size: var(--fs-14);
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text);
   word-break: break-all;
 }
 
@@ -366,7 +359,7 @@ onMounted(() => {
   gap: var(--sp-2);
   margin-top: var(--sp-2);
   padding-top: var(--sp-3);
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--glass-stroke);
 }
 
 .kpi-item {
@@ -377,18 +370,19 @@ onMounted(() => {
 }
 
 .kpi-val {
-  font-size: var(--text-lg);
+  font-size: var(--fs-19);
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 .kpi-val.highlight {
-  color: var(--color-primary);
+  color: var(--ok);
 }
 
 .kpi-lbl {
   font-size: 11px;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
@@ -396,6 +390,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
+  padding: var(--sp-6);
 }
 
 .panel-header {
@@ -411,14 +406,14 @@ onMounted(() => {
 }
 
 .panel-title {
-  font-size: var(--text-lg);
+  font-size: var(--fs-19);
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .summary-count {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
+  font-size: var(--fs-14);
+  color: var(--text-muted);
 }
 
 .table-wrap {
@@ -428,23 +423,23 @@ onMounted(() => {
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--text-sm);
+  font-size: var(--fs-14);
 }
 
 .data-table th,
 .data-table td {
   padding: var(--sp-3);
   text-align: left;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--glass-stroke);
 }
 
 .data-table th {
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-weight: 500;
 }
 
 .run-id-cell {
-  font-size: var(--text-xs);
+  font-size: var(--fs-12);
   max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -455,38 +450,38 @@ onMounted(() => {
   background: rgba(100, 116, 139, 0.1);
   padding: 2px 6px;
   border-radius: 4px;
-  font-size: var(--text-xs);
+  font-size: var(--fs-12);
 }
 
 .badge {
-  font-size: var(--text-xs);
+  font-size: var(--fs-12);
   padding: 2px 8px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-control);
   font-weight: 600;
 }
 
 .badge-success {
   background: rgba(42, 143, 130, 0.15);
-  color: var(--color-success);
+  color: var(--ok);
 }
 
 .badge-warning {
-  background: rgba(234, 88, 12, 0.15);
-  color: #ea580c;
+  background: color-mix(in oklch, var(--pending) 15%, transparent);
+  color: var(--pending);
 }
 
 .badge-danger {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  background: color-mix(in oklch, var(--danger) 15%, transparent);
+  color: var(--danger);
 }
 
 .btn-detail {
   padding: 4px 10px;
   background: none;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  color: var(--color-primary);
-  font-size: var(--text-xs);
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--r-control);
+  color: var(--ok);
+  font-size: var(--fs-12);
   cursor: pointer;
 }
 
@@ -508,7 +503,8 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--bg-card);
+  background: var(--glass-fill-strong);
+  padding: var(--sp-6);
 }
 
 .modal-header {
@@ -516,27 +512,27 @@ onMounted(() => {
   align-items: flex-start;
   justify-content: space-between;
   padding-bottom: var(--sp-3);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--glass-stroke);
 }
 
 .modal-title {
-  font-size: var(--text-base);
+  font-size: var(--fs-16);
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .modal-sub {
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
 .btn-close {
   background: none;
   border: none;
-  font-size: var(--text-lg);
+  font-size: var(--fs-19);
   cursor: pointer;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .task-list {
@@ -548,21 +544,21 @@ onMounted(() => {
 }
 
 .task-card {
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--r-control);
   padding: var(--sp-3);
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
-  background: var(--bg-canvas);
+  background: var(--bg);
 }
 
 .task-card.passed {
-  border-left: 4px solid var(--color-success);
+  border-left: 4px solid var(--ok);
 }
 
 .task-card.failed {
-  border-left: 4px solid #ef4444;
+  border-left: 4px solid var(--danger);
 }
 
 .task-head {
@@ -579,40 +575,40 @@ onMounted(() => {
 
 .task-num {
   font-weight: 600;
-  font-size: var(--text-xs);
+  font-size: var(--fs-12);
 }
 
 .task-latency {
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
 }
 
 .task-q {
-  font-size: var(--text-sm);
-  color: var(--text-primary);
+  font-size: var(--fs-14);
+  color: var(--text);
 }
 
 .verdict-compare-row {
   display: flex;
   gap: var(--sp-6);
-  font-size: var(--text-xs);
+  font-size: var(--fs-12);
   background: rgba(0, 0, 0, 0.02);
   padding: var(--sp-2);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-control);
 }
 
 .verdict-compare-row .lbl {
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
 .verdict-compare-row .val {
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text);
 }
 
 .task-exp {
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
   line-height: 1.5;
 }
 
@@ -623,8 +619,8 @@ onMounted(() => {
 }
 
 .task-quotes .lbl {
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
 }
 
 .quote-tags {
@@ -641,24 +637,24 @@ onMounted(() => {
 
 .quote-tag.verified {
   background: rgba(42, 143, 130, 0.15);
-  color: var(--color-success);
+  color: var(--ok);
 }
 
 .quote-tag.not-found {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  background: color-mix(in oklch, var(--danger) 15%, transparent);
+  color: var(--danger);
 }
 
 .failure-reasons {
   display: flex;
   align-items: center;
   gap: var(--sp-1);
-  font-size: var(--text-xs);
-  color: #ef4444;
+  font-size: var(--fs-12);
+  color: var(--danger);
 }
 
-.text-primary { color: var(--color-primary); }
-.text-danger { color: #ef4444; }
+.text-primary { color: var(--ok); }
+.text-danger { color: var(--danger); }
 .font-mono { font-family: monospace; }
 .icon-xs { width: 14px; height: 14px; }
 .icon-sm { width: 16px; height: 16px; }
@@ -669,8 +665,8 @@ onMounted(() => {
 .empty-state, .loading-state {
   padding: var(--sp-8);
   text-align: center;
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-size: var(--fs-14);
   display: flex;
   align-items: center;
   justify-content: center;

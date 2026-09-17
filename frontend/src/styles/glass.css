@@ -13,6 +13,13 @@
   background: var(--glass-fill-strong);
 }
 
+/* 轻玻璃：用于列表项/卡片网格中的单条元素，按规范不加模糊，仅用实色半透明区分层级 */
+.glass-subtle {
+  background: var(--glass-fill-strong);
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--r-control);
+}
+
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass {
     background: var(--glass-fill-strong);

@@ -278,7 +278,7 @@ function getVerdictClass(v?: string) {
           <div v-else class="assistant-panel glass">
             <!-- 加载状态 -->
             <div v-if="msg.loading" class="loading-box">
-              <Sparkles class="w-5 h-5 animate-spin text-[var(--primary)]" />
+              <Sparkles class="w-5 h-5 animate-spin text-ok" />
               <span>正在全文检索条款、比对依据并生成分析...</span>
             </div>
 
@@ -298,7 +298,7 @@ function getVerdictClass(v?: string) {
               <!-- 推理分析步骤 -->
               <div v-if="msg.answer.reasoning?.length" class="section-block">
                 <div class="section-title">
-                  <Sparkles class="w-4 h-4 mr-1 text-[var(--primary)]" />
+                  <Sparkles class="w-4 h-4 mr-1 text-ok" />
                   条款分析过程
                 </div>
                 <ul class="reasoning-list">
@@ -311,7 +311,7 @@ function getVerdictClass(v?: string) {
               <!-- 条款依据引用卡片 (思源宋体，左侧竖线) -->
               <div v-if="msg.answer.citations?.length" class="section-block">
                 <div class="section-title">
-                  <FileText class="w-4 h-4 mr-1 text-[var(--primary)]" />
+                  <FileText class="w-4 h-4 mr-1 text-ok" />
                   合同条款原文依据
                 </div>
                 <div class="citations-grid">
@@ -340,7 +340,7 @@ function getVerdictClass(v?: string) {
                 v-if="msg.answer.confirm_with_insurer?.length"
                 class="section-block confirm-box"
               >
-                <div class="section-title text-[var(--amber)]">
+                <div class="section-title text-pending">
                   <AlertTriangle class="w-4 h-4 mr-1" />
                   需向保险公司进一步确认事项
                 </div>
@@ -409,6 +409,26 @@ function getVerdictClass(v?: string) {
 </template>
 
 <style scoped>
+/* 行内小图标尺寸与间距工具类（本文件专用，替代此前失效的 Tailwind 类名） */
+.w-3 { width: 12px; }
+.h-3 { height: 12px; }
+.w-3\.5 { width: 14px; }
+.h-3\.5 { height: 14px; }
+.w-4 { width: 16px; }
+.h-4 { height: 16px; }
+.w-5 { width: 20px; }
+.h-5 { height: 20px; }
+.mr-1 { margin-right: 4px; }
+.ml-0\.5 { margin-left: 2px; }
+.inline { display: inline; }
+.flex-shrink-0 { flex-shrink: 0; }
+.text-ok { color: var(--ok); }
+.text-pending { color: var(--pending); }
+.animate-spin { animation: ask-page-spin 1s linear infinite; }
+@keyframes ask-page-spin {
+  to { transform: rotate(360deg); }
+}
+
 .ask-page-layout {
   display: flex;
   height: calc(100vh - 64px);
@@ -434,13 +454,13 @@ function getVerdictClass(v?: string) {
   flex-wrap: wrap;
   gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-4);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   margin-bottom: var(--sp-3);
 }
 
 .scope-label {
-  font-size: var(--fs-body-sm);
-  color: var(--text-2);
+  font-size: var(--fs-14);
+  color: var(--text-muted);
   font-weight: 500;
 }
 
@@ -453,29 +473,33 @@ function getVerdictClass(v?: string) {
   display: inline-flex;
   align-items: center;
   padding: 4px 12px;
-  border-radius: var(--rad-full);
-  font-size: var(--fs-body-xs);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-12);
   background: transparent;
-  color: var(--text-2);
-  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  border: 1px solid var(--glass-stroke);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .pill-btn.active {
-  background: var(--primary);
+  background: var(--ok);
   color: #fff;
-  border-color: var(--primary);
+  border-color: var(--ok);
 }
 
 .scope-select {
   padding: 4px 10px;
-  font-size: var(--fs-body-xs);
-  border-radius: var(--rad-control);
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-1);
-  color: var(--text-1);
-  outline: none;
+  font-size: var(--fs-12);
+  border-radius: var(--r-control);
+  border: 1px solid var(--glass-stroke);
+  background: var(--glass-fill);
+  color: var(--text);
+}
+
+.scope-select:focus-visible {
+  outline: 2px solid var(--ok);
+  outline-offset: 2px;
 }
 
 /* 消息流 */
@@ -503,11 +527,11 @@ function getVerdictClass(v?: string) {
 
 .user-bubble {
   max-width: 75%;
-  background: var(--primary);
+  background: var(--ok);
   color: #fff;
   padding: var(--sp-3) var(--sp-4);
   border-radius: 16px 16px 4px 16px;
-  font-size: var(--fs-body-md);
+  font-size: var(--fs-16);
   line-height: 1.5;
   word-break: break-word;
 }
@@ -515,24 +539,24 @@ function getVerdictClass(v?: string) {
 .assistant-panel {
   max-width: 85%;
   width: 100%;
-  border-radius: var(--rad-panel);
+  border-radius: var(--r-panel);
   padding: var(--sp-5);
-  background: var(--surface-2);
-  border: 1px solid var(--border-subtle);
+  background: var(--glass-fill-strong);
+  border: 1px solid var(--glass-stroke);
 }
 
 .loading-box {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  color: var(--text-2);
-  font-size: var(--fs-body-sm);
+  color: var(--text-muted);
+  font-size: var(--fs-14);
   padding: var(--sp-2) 0;
 }
 
 .text-content {
-  font-size: var(--fs-body-md);
-  color: var(--text-1);
+  font-size: var(--fs-16);
+  color: var(--text);
   line-height: 1.6;
 }
 
@@ -542,17 +566,17 @@ function getVerdictClass(v?: string) {
   align-items: center;
   justify-content: space-between;
   padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--rad-control);
+  border-radius: var(--r-control);
   margin-bottom: var(--sp-4);
 }
 
 .verdict-tag {
-  font-size: var(--fs-body-lg);
+  font-size: var(--fs-16);
   font-weight: 600;
 }
 
 .verdict-sub {
-  font-size: var(--fs-body-xs);
+  font-size: var(--fs-12);
   opacity: 0.85;
 }
 
@@ -570,14 +594,14 @@ function getVerdictClass(v?: string) {
 
 .verdict-depends {
   background: rgba(208, 140, 54, 0.15);
-  color: var(--warning);
-  border-left: 4px solid var(--warning);
+  color: var(--pending);
+  border-left: 4px solid var(--pending);
 }
 
 .verdict-no-basis {
   background: rgba(136, 152, 149, 0.15);
-  color: var(--text-2);
-  border-left: 4px solid var(--text-3);
+  color: var(--text-muted);
+  border-left: 4px solid var(--text-muted);
 }
 
 .section-block {
@@ -587,9 +611,9 @@ function getVerdictClass(v?: string) {
 .section-title {
   display: flex;
   align-items: center;
-  font-size: var(--fs-body-sm);
+  font-size: var(--fs-14);
   font-weight: 600;
-  color: var(--text-1);
+  color: var(--text);
   margin-bottom: var(--sp-2);
 }
 
@@ -599,8 +623,8 @@ function getVerdictClass(v?: string) {
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);
-  font-size: var(--fs-body-sm);
-  color: var(--text-2);
+  font-size: var(--fs-14);
+  color: var(--text-muted);
   line-height: 1.6;
 }
 
@@ -613,16 +637,16 @@ function getVerdictClass(v?: string) {
 
 .citation-card {
   padding: var(--sp-3);
-  border-radius: var(--rad-control);
-  background: var(--surface-1);
-  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-control);
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-stroke);
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .citation-card:hover {
   background: rgba(42, 143, 130, 0.05);
-  border-color: var(--primary);
+  border-color: var(--ok);
 }
 
 .citation-header {
@@ -630,48 +654,48 @@ function getVerdictClass(v?: string) {
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--sp-2);
-  font-size: var(--fs-body-xs);
+  font-size: var(--fs-12);
 }
 
 .policy-name {
   font-weight: 600;
-  color: var(--text-1);
+  color: var(--text);
 }
 
 .page-badge {
   padding: 2px 6px;
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.06);
-  color: var(--text-2);
+  color: var(--text-muted);
 }
 
 .action-tag {
-  color: var(--primary);
+  color: var(--ok);
   display: inline-flex;
   align-items: center;
 }
 
 .citation-quote {
-  font-family: var(--font-serif);
-  font-size: var(--fs-body-sm);
-  color: var(--text-1);
-  line-height: 1.5;
-  border-left: 2px solid var(--primary);
+  font-family: var(--font-quote);
+  font-size: var(--fs-14);
+  color: var(--text);
+  line-height: var(--lh-quote);
+  border-left: 2px solid var(--ok);
   padding-left: var(--sp-2);
 }
 
 .confirm-box {
   background: rgba(208, 140, 54, 0.08);
   padding: var(--sp-3);
-  border-radius: var(--rad-control);
-  border: 1px dashed var(--warning);
+  border-radius: var(--r-control);
+  border: 1px dashed var(--pending);
 }
 
 .confirm-list {
   list-style-type: disc;
   padding-left: var(--sp-5);
-  font-size: var(--fs-body-xs);
-  color: var(--text-2);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
   line-height: 1.6;
 }
 
@@ -679,9 +703,9 @@ function getVerdictClass(v?: string) {
   display: flex;
   align-items: center;
   font-size: 11px;
-  color: var(--text-3);
+  color: var(--text-muted);
   padding-top: var(--sp-2);
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--glass-stroke);
 }
 
 /* 预设问题 */
@@ -694,24 +718,24 @@ function getVerdictClass(v?: string) {
 }
 
 .preset-label {
-  font-size: var(--fs-body-xs);
-  color: var(--text-3);
+  font-size: var(--fs-12);
+  color: var(--text-muted);
 }
 
 .preset-chip {
-  background: var(--surface-1);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-2);
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-stroke);
+  color: var(--text-muted);
   padding: 4px 10px;
-  border-radius: var(--rad-full);
-  font-size: var(--fs-body-xs);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-12);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .preset-chip:hover {
-  color: var(--primary);
-  border-color: var(--primary);
+  color: var(--ok);
+  border-color: var(--ok);
 }
 
 /* 输入框 */
@@ -720,9 +744,9 @@ function getVerdictClass(v?: string) {
   align-items: flex-end;
   gap: var(--sp-2);
   padding: var(--sp-3);
-  border-radius: var(--rad-control);
-  background: var(--surface-1);
-  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-control);
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-stroke);
 }
 
 .chat-textarea {
@@ -730,21 +754,25 @@ function getVerdictClass(v?: string) {
   border: none;
   background: transparent;
   resize: none;
-  font-size: var(--fs-body-md);
-  color: var(--text-1);
-  outline: none;
+  font-size: var(--fs-16);
+  color: var(--text);
   font-family: inherit;
+}
+
+.chat-textarea:focus-visible {
+  outline: 2px solid var(--ok);
+  outline-offset: 2px;
 }
 
 .send-btn {
   display: inline-flex;
   align-items: center;
   padding: 8px 18px;
-  background: var(--primary);
+  background: var(--ok);
   color: #fff;
   border: none;
-  border-radius: var(--rad-control);
-  font-size: var(--fs-body-sm);
+  border-radius: var(--r-control);
+  font-size: var(--fs-14);
   font-weight: 500;
   cursor: pointer;
   transition: opacity 0.15s ease;
@@ -769,8 +797,8 @@ function getVerdictClass(v?: string) {
   width: 650px;
   max-width: 90vw;
   height: 100%;
-  background: var(--surface-1);
-  border-left: 1px solid var(--border-subtle);
+  background: var(--glass-fill);
+  border-left: 1px solid var(--glass-stroke);
   display: flex;
   flex-direction: column;
 }
@@ -782,6 +810,22 @@ function getVerdictClass(v?: string) {
   .assistant-panel,
   .user-bubble {
     max-width: 95%;
+  }
+}
+
+/* 手机 (<600px)：原文阅读抽屉改为从底部滑出的全屏抽屉 */
+@media (max-width: 599px) {
+  .drawer-overlay {
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .drawer-container {
+    width: 100%;
+    max-width: 100%;
+    height: 90vh;
+    border-left: none;
+    border-top: 1px solid var(--glass-stroke);
+    border-radius: var(--r-panel) var(--r-panel) 0 0;
   }
 }
 </style>
