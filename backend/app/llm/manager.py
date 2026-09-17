@@ -21,10 +21,12 @@ class ModelManager:
         else:
             self._config = {"default": "evolving", "models": {}}
 
-        # 优先使用 .env 中的配置覆盖模型 ID 与 base_url
+        # 优先使用 .env 中的配置覆盖模型 ID 与 base_url。
+        # ARK_BASE_URL 只能作用于方舟模型：一并覆盖其他 provider 会把它们在
+        # models.yaml 里配好的端点静默替换成方舟地址，多模型对照会因此跑不通。
         models = self._config.get("models", {})
         for m in models.values():
-            if settings.ark_base_url:
+            if settings.ark_base_url and m.get("provider", "ark") == "ark":
                 m["base_url"] = settings.ark_base_url
         if "evolving" in models and settings.model_primary:
             models["evolving"]["model_id"] = settings.model_primary
@@ -66,7 +68,12 @@ class ModelManager:
         base_url = conf.get("base_url", settings.ark_base_url)
         model_id = conf.get("model_id", settings.model_primary)
         api_key_env = conf.get("api_key_env", "ARK_API_KEY")
-        api_key = os.environ.get(api_key_env, settings.ark_api_key)
+        # 只有方舟模型才回退到 ARK_API_KEY。非方舟模型若拿方舟的 key 去调，
+        # 会得到一个难以定位的 401，而不是「密钥未配置」这种明确报错。
+        if provider_name == "ark":
+            api_key = os.environ.get(api_key_env, settings.ark_api_key)
+        else:
+            api_key = os.environ.get(api_key_env, "")
         display_name = conf.get("display_name", key)
 
         if provider_name == "openai_compat":
