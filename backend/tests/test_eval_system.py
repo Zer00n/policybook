@@ -7,6 +7,7 @@ from app.eval.faults import FaultInjector, FaultInjectionError
 from app.eval.judge import judge_task_e3, judge_run
 from app.eval.summarize import summarize_runs
 from app.main import app
+from conftest import authenticate_async
 
 
 def test_fault_injector():
@@ -138,6 +139,7 @@ def test_judge_run_and_summarize(tmp_path):
 async def test_eval_api_endpoints():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await authenticate_async(client)
         resp = await client.get("/api/eval/summary")
         assert resp.status_code == 200
         data = resp.json()

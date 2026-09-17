@@ -14,6 +14,7 @@ from app.db.models import Clause, Coverage, Document, Member, Page, Policy, Poli
 from app.llm.manager import ModelManager
 from app.llm.ark import extract_json_from_text
 from app.settings import settings
+from app.utils.compliance import filter_forbidden_phrases
 from app.utils.verify import verify_quote
 
 router = APIRouter(prefix="/qa", tags=["qa"])
@@ -310,12 +311,16 @@ async def execute_qa_logic(
         reasoning.append("（系统降级说明：模型引用的所有条款依据均未通过原文逐字校验，结论已自动降级为未找到依据）")
         parsed["reasoning"] = reasoning
 
+    # 红线8：模型自由生成的理由与待确认事项在返回前必须过滤违禁措辞
+    filtered_reasoning = [filter_forbidden_phrases(r)[0] for r in parsed.get("reasoning", [])]
+    filtered_confirm = [filter_forbidden_phrases(c)[0] for c in parsed.get("confirm_with_insurer", [])]
+
     answer_dto = QAAnswerDto(
         verdict=verdict,
         verdict_label=VERDICT_LABELS.get(verdict, "条款中未找到依据"),
-        reasoning=parsed.get("reasoning", []),
+        reasoning=filtered_reasoning,
         citations=verified_citations,
-        confirm_with_insurer=parsed.get("confirm_with_insurer", []),
+        confirm_with_insurer=filtered_confirm,
     )
 
     return policies_map, context_policies, answer_dto

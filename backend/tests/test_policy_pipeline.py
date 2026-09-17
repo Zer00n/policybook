@@ -3,8 +3,10 @@ from fastapi.testclient import TestClient
 from app.db.models import Document, Job, Member, Page, Policy
 from app.db.session import SessionLocal
 from app.main import app
+from conftest import authenticate
 
 client = TestClient(app)
+authenticate(client)
 
 
 def test_review_and_confirm_policy_pipeline():

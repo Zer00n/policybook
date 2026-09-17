@@ -1,10 +1,12 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.auth.dependencies import require_login
+from app.api.auth import router as auth_router
 from app.api.health import router as health_router
 from app.api.settings import router as settings_router
 from app.api.members import router as members_router
@@ -110,21 +112,28 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 
 # Mount routers under /api
+# health 与 auth 自身必须公开可访问；calendar_router 内部混装了公开的 ICS
+# 订阅端点（自带随机 token）与需要登录的 /api/reminders 端点，因此不在这里
+# 整体挂载登录依赖，而是在 app/api/calendar.py 里逐路由单独声明。
+# 其余所有路由统一要求登录（红线11）。
+_login_required = [Depends(require_login)]
+
 app.include_router(health_router, prefix="/api")
-app.include_router(settings_router, prefix="/api")
-app.include_router(members_router, prefix="/api")
-app.include_router(imports_router, prefix="/api")
-app.include_router(documents_router, prefix="/api")
-app.include_router(review_router, prefix="/api")
-app.include_router(policies_router, prefix="/api")
-app.include_router(qa_router, prefix="/api")
-app.include_router(claim_router, prefix="/api")
-app.include_router(overview_router, prefix="/api")
-app.include_router(coverage_router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
+app.include_router(settings_router, prefix="/api", dependencies=_login_required)
+app.include_router(members_router, prefix="/api", dependencies=_login_required)
+app.include_router(imports_router, prefix="/api", dependencies=_login_required)
+app.include_router(documents_router, prefix="/api", dependencies=_login_required)
+app.include_router(review_router, prefix="/api", dependencies=_login_required)
+app.include_router(policies_router, prefix="/api", dependencies=_login_required)
+app.include_router(qa_router, prefix="/api", dependencies=_login_required)
+app.include_router(claim_router, prefix="/api", dependencies=_login_required)
+app.include_router(overview_router, prefix="/api", dependencies=_login_required)
+app.include_router(coverage_router, prefix="/api", dependencies=_login_required)
 app.include_router(calendar_router)
-app.include_router(renewal_router, prefix="/api")
-app.include_router(reports_router, prefix="/api")
-app.include_router(eval_router, prefix="/api")
+app.include_router(renewal_router, prefix="/api", dependencies=_login_required)
+app.include_router(reports_router, prefix="/api", dependencies=_login_required)
+app.include_router(eval_router, prefix="/api", dependencies=_login_required)
 
 # Serve frontend static assets if available (Docker /app/static or frontend/dist)
 from pathlib import Path

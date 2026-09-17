@@ -10,10 +10,17 @@ import {
   Shield,
   RotateCcw,
   Save,
+  LogOut,
 } from 'lucide-vue-next'
 import { useThemeStore } from '@/stores/theme'
+import { useAuthStore } from '@/stores/auth'
 
 const themeStore = useThemeStore()
+const authStore = useAuthStore()
+
+function handleLogout() {
+  authStore.logout()
+}
 const settingsData = ref<any>(null)
 const loading = ref(false)
 const testResult = ref<any>(null)
@@ -224,6 +231,17 @@ onMounted(() => {
           @click="themeStore.toggleLite"
         >
           {{ themeStore.isLite ? '已启用简洁模式' : '已开启平滑效果' }}
+        </button>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-name">账号</div>
+          <div class="setting-desc">退出后需重新输入家庭密码才能访问</div>
+        </div>
+        <button class="btn-danger" @click="handleLogout">
+          <LogOut :size="14" />
+          退出登录
         </button>
       </div>
     </div>

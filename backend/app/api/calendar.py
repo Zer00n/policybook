@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from icalendar import Calendar, Event
 
+from app.auth.dependencies import require_login
 from app.db.session import get_db
 from app.db.models import Policy, Member, Reminder, AppSetting, PolicyParty
 from app.schemas.calendar import (
@@ -121,7 +122,7 @@ def get_calendar_ics(token: str, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/api/reminders", response_model=List[ReminderDto])
+@router.get("/api/reminders", response_model=List[ReminderDto], dependencies=[Depends(require_login)])
 def list_reminders(status: Optional[str] = None, db: Session = Depends(get_db)):
     # Refresh reminders
     generate_daily_reminders(db)
@@ -153,7 +154,7 @@ def list_reminders(status: Optional[str] = None, db: Session = Depends(get_db)):
     return result
 
 
-@router.patch("/api/reminders/{reminder_id}/dismiss")
+@router.patch("/api/reminders/{reminder_id}/dismiss", dependencies=[Depends(require_login)])
 def dismiss_reminder(reminder_id: str, db: Session = Depends(get_db)):
     rem = db.query(Reminder).filter(Reminder.id == reminder_id).first()
     if not rem:

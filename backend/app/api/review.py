@@ -1,6 +1,7 @@
 import json
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -23,6 +24,7 @@ from app.db.models import (
 from app.db.session import get_db
 from app.utils.cn_money import parse_cn_money
 from app.utils.cn_ratio import parse_cn_ratio
+from app.utils.verify import verify_quote
 
 router = APIRouter(prefix="/imports", tags=["review"])
 
@@ -87,8 +89,48 @@ def update_review_field(
     if not target_field:
         raise HTTPException(status_code=404, detail=f"Field {field_key} not found in review draft")
 
-    target_field["value"] = payload.value
-    target_field["status"] = payload.status
+    # 红线5：不得信任客户端声称的核验状态，必须由服务端自行判定。
+    old_value = target_field.get("value")
+    new_value = payload.value
+    if new_value != old_value:
+        # 值确实被人工修改：按 DEV-GUIDE 3.5，人工修改即标记人工值，视为已核验
+        resolved_status = "verified"
+        target_field["conflict_reason"] = None
+    else:
+        # 值未发生变化：不能仅凭客户端传入的 status 判定，需重新核验原文引用
+        quote = target_field.get("quote")
+        if quote:
+            document_id = review_data.get("document_id")
+            pages = db.query(Page).filter(Page.document_id == document_id).all()
+            pages_text = {p.page_no: p.text_masked or "" for p in pages}
+            char_maps: dict[int, list] = {}
+            for p in pages:
+                cmap: list = []
+                if p.char_map_path and Path(p.char_map_path).exists():
+                    try:
+                        with open(p.char_map_path, "r", encoding="utf-8") as f:
+                            raw_cmap = json.load(f)
+                            cmap = raw_cmap.get("chars", raw_cmap) if isinstance(raw_cmap, dict) else raw_cmap
+                    except Exception:
+                        cmap = []
+                char_maps[p.page_no] = cmap
+
+            v_res = verify_quote(
+                pages_text=pages_text,
+                target_page=target_field.get("page_no", 1),
+                quote=quote,
+                field_name=field_key,
+                model_value=new_value,
+                char_maps=char_maps,
+            )
+            resolved_status = v_res.status
+            target_field["rects"] = v_res.rects
+            target_field["conflict_reason"] = v_res.conflict_reason
+        else:
+            resolved_status = target_field.get("status", "unverified")
+
+    target_field["value"] = new_value
+    target_field["status"] = resolved_status
     if payload.member_id is not None:
         target_field["member_id"] = payload.member_id if payload.member_id != "" else None
     target_field["is_human_modified"] = True

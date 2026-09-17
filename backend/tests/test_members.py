@@ -2,8 +2,10 @@ from fastapi.testclient import TestClient
 from app.db.models import Member
 from app.db.session import SessionLocal
 from app.main import app
+from conftest import authenticate
 
 client = TestClient(app)
+authenticate(client)
 
 
 

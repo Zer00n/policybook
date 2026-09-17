@@ -25,6 +25,7 @@ from app.db.models import Clause, Coverage, Document, Member, Page, Policy, Poli
 from app.llm.manager import ModelManager
 from app.llm.ark import extract_json_from_text
 from app.settings import settings
+from app.utils.compliance import filter_forbidden_phrases
 from app.utils.verify import verify_quote
 
 router = APIRouter(prefix="/claim", tags=["claim"])
@@ -345,17 +346,22 @@ async def simulate_claim(
         for e in result.excluded
     ]
 
+    # 红线8：模型自由生成的事实摘要、待确认事项、材料清单在返回前必须过滤违禁措辞
+    filtered_facts = [filter_forbidden_phrases(x)[0] for x in parsed.get("extracted_facts", [])]
+    filtered_confirm = [filter_forbidden_phrases(x)[0] for x in parsed.get("confirm_with_insurer", [])]
+    filtered_materials = [filter_forbidden_phrases(x)[0] for x in parsed.get("materials_needed", [])]
+
     return ClaimSimulateResponse(
         member_id=member.id,
         member_name=member.placeholder,
         event_kind=request.event_kind,
         event_date=request.event_date,
-        extracted_facts=parsed.get("extracted_facts", []),
+        extracted_facts=filtered_facts,
         waterfall_steps=step_dtos,
         lump_sums=lump_dtos,
         excluded=excluded_dtos,
         out_of_pocket_low=float(result.out_of_pocket[0]),
         out_of_pocket_high=float(result.out_of_pocket[1]),
-        confirm_with_insurer=parsed.get("confirm_with_insurer", []),
-        materials_needed=parsed.get("materials_needed", []),
+        confirm_with_insurer=filtered_confirm,
+        materials_needed=filtered_materials,
     )

@@ -7,6 +7,7 @@ from app.main import app
 from app.db.session import get_db, engine, Base
 from app.db.models import Coverage, Document, Member, Policy, PolicyParty
 from app.db.crypto import encrypt_str
+from conftest import authenticate
 
 
 @pytest.fixture
@@ -21,6 +22,7 @@ def db_session():
 
 def test_claim_simulate_endpoint_success(db_session: Session):
     client = TestClient(app)
+    authenticate(client)
 
     # 1. 建立测试成员
     member = db_session.query(Member).filter(Member.id == "mem_claim_1").first()
@@ -108,6 +110,7 @@ def test_claim_simulate_endpoint_success(db_session: Session):
 
 def test_claim_simulate_member_not_found(db_session: Session):
     client = TestClient(app)
+    authenticate(client)
     resp = client.post(
         "/api/claim/simulate",
         json={

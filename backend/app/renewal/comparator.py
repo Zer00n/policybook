@@ -9,6 +9,16 @@ from app.schemas.renewal import (
     ComparisonRow,
     ProductColumn,
 )
+from app.utils.compliance import FORBIDDEN_PHRASE_REPLACEMENTS, filter_forbidden_phrases
+
+__all__ = [
+    "FORBIDDEN_PHRASE_REPLACEMENTS",
+    "filter_forbidden_phrases",
+    "format_cents_to_display",
+    "get_dimension_value_from_coverages",
+    "build_comparison_matrix",
+    "verify_url_provenance",
+]
 
 # Ordered dimension keys for accident insurance comparison
 ACCIDENT_DIMENSION_ORDER = [
@@ -21,20 +31,6 @@ ACCIDENT_DIMENSION_ORDER = [
     ("hospital_allowance", "意外住院津贴"),
     ("exclusions", "重点免责约定"),
 ]
-
-FORBIDDEN_PHRASE_REPLACEMENTS = [
-    (r"强烈推荐", "值得重点关注的方案"),
-    (r"推荐购买", "与你的需求更匹配的维度"),
-    (r"最适合", "匹配度较高的"),
-    (r"最划算", "费率相对较低的"),
-    (r"性价比最高", "综合保障相对均衡的"),
-    (r"一定能赔", "通常在保障责任范围内的"),
-    (r"保证赔付", "符合条款约定时予以给付"),
-    (r"绝对保证", "严格按照条款约定"),
-    (r"百分之百报销", "依条款全额补偿"),
-    (r"无条件给付", "依约定标准给付"),
-]
-
 
 def format_cents_to_display(cents: int | None) -> str:
     if cents is None:
@@ -82,7 +78,9 @@ def get_dimension_value_from_coverages(
 
     elif dimension_key == "deductible":
         covs = [c for c in coverages if c.kind in ("accident_medical", "medical")]
-        if covs and covs[0].deductible_cents is not None:
+        if not covs:
+            return ComparisonCell(value="不含医疗责任", status="missing")
+        if covs[0].deductible_cents is not None:
             val = format_cents_to_display(covs[0].deductible_cents)
             return ComparisonCell(value=val, status="covered")
         return ComparisonCell(value="0 元免赔", status="covered")
@@ -238,23 +236,3 @@ def verify_url_provenance(
             removed_count += 1
 
     return "".join(cleaned_sentences).strip(), removed_count
-
-
-def filter_forbidden_phrases(text: str) -> tuple[str, list[str]]:
-    """
-    Substitutes marketing / compliance forbidden phrases with neutral wording
-    (Red Line 8 & DEV-GUIDE 8.7). Returns (sanitized_text, hit_phrases).
-    """
-    if not text:
-        return "", []
-
-    hits: list[str] = []
-    sanitized = text
-
-    for pattern, replacement in FORBIDDEN_PHRASE_REPLACEMENTS:
-        matches = re.findall(pattern, sanitized)
-        if matches:
-            hits.extend(matches)
-            sanitized = re.sub(pattern, replacement, sanitized)
-
-    return sanitized, hits

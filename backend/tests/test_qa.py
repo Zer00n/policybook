@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.main import app
 from app.db.session import get_db, engine, Base
 from app.db.models import Clause, Document, Member, Policy, PolicyParty, Coverage
+from conftest import authenticate
 
 
 @pytest.fixture
@@ -23,6 +24,7 @@ def test_qa_endpoint_no_basis_when_unrelated(db_session: Session):
     问答对一个条款中确无依据的问题返回 no_basis 的接口响应。
     """
     client = TestClient(app)
+    authenticate(client)
 
     # 构造一份测试保单与特定条款
     doc = db_session.query(Document).filter(Document.id == "doc_qa_test").first()
@@ -80,6 +82,7 @@ def test_qa_fts_retrieval_and_exact_quote(db_session: Session):
     测试 FTS 检索能正确定位并返回带有依据状态的问答
     """
     client = TestClient(app)
+    authenticate(client)
 
     doc = db_session.query(Document).filter(Document.id == "doc_qa_test_2").first()
     if not doc:

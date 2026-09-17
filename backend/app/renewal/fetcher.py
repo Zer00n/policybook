@@ -12,6 +12,7 @@ from app.renewal.security import (
     DomainNotAllowedError,
     InvalidURLError,
     SSRFSecurityError,
+    resolve_pinned_connection,
     validate_fetch_url,
 )
 from app.settings import settings
@@ -241,9 +242,18 @@ async def fetch_candidate_document(
         db.commit()
         return doc.id
 
-    # For other URLs, perform actual HTTP download with streaming size limit
+    # For other URLs, perform actual HTTP download with streaming size limit.
+    # 用 IP 直连的 pinned_url 发起真实请求，避免 httpx 独立重新解析 DNS
+    # （DNS rebinding TOCTOU 缺口，红线10）；Host 头与 SNI 扩展仍指向真实域名，
+    # 保证虚拟主机与证书校验正确。
+    pinned_url, original_host = resolve_pinned_connection(safe_url)
     async with (client or httpx.AsyncClient(timeout=10.0)) as http_c:
-        async with http_c.stream("GET", safe_url) as response:
+        async with http_c.stream(
+            "GET",
+            pinned_url,
+            headers={"Host": original_host},
+            extensions={"sni_hostname": original_host},
+        ) as response:
             status_code = response.status_code
             if status_code >= 400:
                 raise DocumentFetchError(f"HTTP 请求返回错误状态码: {status_code}")

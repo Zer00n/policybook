@@ -14,7 +14,7 @@ POLICY_NO_RE = re.compile(r"(?:保单号(?:码)?|保险单号|合同编号|投�
 ADDRESS_RE = re.compile(r"(?:家庭住址|联系地址|通讯地址|详细地址|住址)(?:为|是)?[:：\s]*([^\n\r,，。;；]{6,50})")
 
 
-CARD_CONTEXT_WORDS = ("账号", "卡号", "银行", "账户", "缴费账户", "扣款账户")
+CARD_CONTEXT_WORDS = ("账号", "卡号", "银行", "账户")
 
 
 def verify_id_checksum(id_str: str) -> bool:

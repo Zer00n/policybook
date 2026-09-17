@@ -7,6 +7,7 @@ from app.db.models import Coverage, Member, Policy, PolicyParty
 from app.main import app
 from app.reports.ppt_builder import build_family_ppt
 from app.reports.ppt_verify import tamper_ppt_text, verify_ppt_numbers
+from conftest import authenticate_async
 
 
 @pytest.fixture
@@ -124,6 +125,7 @@ def test_ppt_tamper_detection_failure(ppt_test_db, tmp_path):
 async def test_reports_api(ppt_test_db):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await authenticate_async(client)
         # 1. Generate PPT
         resp = await client.post("/api/reports/ppt", json={"custom_summary": "家庭保单检视良好，保障充分。"})
         assert resp.status_code == 200

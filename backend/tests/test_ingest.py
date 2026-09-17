@@ -7,8 +7,10 @@ from app.db.models import Job
 from app.db.session import SessionLocal
 from app.jobs.queue import worker
 from app.main import app
+from conftest import authenticate
 
 client = TestClient(app)
+authenticate(client)
 fixtures_dir = Path(__file__).resolve().parent / "fixtures"
 
 

@@ -8,6 +8,7 @@ from app.renewal.comparator import (
     build_comparison_matrix,
     filter_forbidden_phrases,
     format_cents_to_display,
+    get_dimension_value_from_coverages,
     verify_url_provenance,
 )
 
@@ -149,3 +150,24 @@ def test_build_comparison_matrix():
     sudden_row = next(r for r in matrix.rows if r.dimension_key == "sudden_death")
     assert sudden_row.baseline_cell.status == "missing"
     assert "30 万元" in sudden_row.candidate_cells["cand_pingan"].value
+
+
+def test_deductible_dimension_does_not_fabricate_when_no_medical_coverage():
+    """候选产品完全没有医疗类责任项时，不应凭空返回“0 元免赔 / covered”，
+    必须如实标注“不含医疗责任 / missing”。"""
+    coverages_without_medical = [
+        Coverage(id=str(ULID()), name="意外身故及伤残", kind="death", limit_cents=50000000),
+    ]
+    cell = get_dimension_value_from_coverages(coverages_without_medical, "deductible")
+    assert cell.status == "missing"
+    assert cell.value == "不含医疗责任"
+
+
+def test_deductible_dimension_reports_actual_value_when_present():
+    coverages_with_medical = [
+        Coverage(id=str(ULID()), name="意外医疗", kind="accident_medical",
+                  limit_cents=2000000, deductible_cents=10000),
+    ]
+    cell = get_dimension_value_from_coverages(coverages_with_medical, "deductible")
+    assert cell.status == "covered"
+    assert cell.value != "不含医疗责任"

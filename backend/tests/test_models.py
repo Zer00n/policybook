@@ -1,8 +1,10 @@
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
+from conftest import authenticate
 
 client = TestClient(app)
+authenticate(client)
 
 
 def test_model_test_endpoint():

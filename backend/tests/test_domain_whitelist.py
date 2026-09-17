@@ -9,6 +9,7 @@ from app.renewal.security import (
     SSRFSecurityError,
     is_domain_allowed,
     is_ip_private_or_reserved,
+    resolve_pinned_connection,
     validate_fetch_url,
 )
 
@@ -109,3 +110,35 @@ def test_validate_fetch_url_valid():
         ]
         safe_url = validate_fetch_url("https://pingan.com/product/clause.pdf", allowed)
         assert safe_url == "https://pingan.com/product/clause.pdf"
+
+
+def test_resolve_pinned_connection_valid():
+    # 红线10：独立解析并把安全 IP 锁定进连接目标，避免 httpx 二次解析产生的 TOCTOU 缺口
+    with patch("socket.getaddrinfo") as mock_getaddrinfo:
+        mock_getaddrinfo.return_value = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("120.52.148.118", 443))
+        ]
+        pinned_url, hostname = resolve_pinned_connection("https://pingan.com/product/clause.pdf")
+        assert pinned_url == "https://120.52.148.118/product/clause.pdf"
+        assert hostname == "pingan.com"
+
+
+def test_resolve_pinned_connection_no_safe_ip():
+    with patch("socket.getaddrinfo") as mock_getaddrinfo:
+        mock_getaddrinfo.return_value = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 443))
+        ]
+        with pytest.raises(SSRFSecurityError):
+            resolve_pinned_connection("https://pingan.com/product/clause.pdf")
+
+
+def test_resolve_pinned_connection_skips_private_and_picks_safe_ip():
+    # 解析结果里第一条是私有地址、第二条是公网地址：应跳过私有地址选中安全的那个
+    with patch("socket.getaddrinfo") as mock_getaddrinfo:
+        mock_getaddrinfo.return_value = [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("10.0.0.5", 443)),
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("120.52.148.118", 443)),
+        ]
+        pinned_url, hostname = resolve_pinned_connection("https://pingan.com/product/clause.pdf")
+        assert "120.52.148.118" in pinned_url
+        assert "10.0.0.5" not in pinned_url

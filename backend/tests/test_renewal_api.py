@@ -5,6 +5,7 @@ from ulid import ULID
 from app.main import app
 from app.db.session import SessionLocal
 from app.db.models import Coverage, Document, Policy
+from conftest import authenticate_async
 
 
 @pytest.fixture
@@ -57,6 +58,7 @@ def test_accident_policy():
 async def test_renewal_api_full_flow(test_accident_policy):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await authenticate_async(client)
         # 1. Create renewal session
         resp = await client.post("/api/renewal/sessions", json={"policy_id": test_accident_policy})
         assert resp.status_code == 200

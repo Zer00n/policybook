@@ -3,8 +3,10 @@ from starlette.testclient import TestClient
 from app.main import app
 from app.db.session import SessionLocal
 from app.db.models import Member, Policy, PolicyParty
+from conftest import authenticate
 
 client = TestClient(app)
+authenticate(client)
 
 
 def test_overview_api_and_timeline():

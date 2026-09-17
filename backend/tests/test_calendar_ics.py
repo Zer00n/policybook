@@ -1,7 +1,9 @@
 from starlette.testclient import TestClient
 from app.main import app
+from conftest import authenticate
 
 client = TestClient(app)
+authenticate(client)
 
 
 def test_calendar_token_management():

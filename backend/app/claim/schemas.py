@@ -60,3 +60,4 @@ class ClaimSimulateResponse(BaseModel):
     out_of_pocket_high: float
     confirm_with_insurer: list[str] = []
     materials_needed: list[str] = []
+    disclaimer: str = "保单簿根据你上传的合同文本整理信息，帮助你理解条款和估算大致范围。所有结论以保险公司的核定和合同原文为准，本工具不构成投保建议、核保意见或理赔承诺。"

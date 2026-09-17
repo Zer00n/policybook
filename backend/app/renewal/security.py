@@ -106,3 +106,38 @@ def validate_fetch_url(url: str, allowed_domains: list[str]) -> str:
             raise SSRFSecurityError(f"SSRF 防护拦截：主机 '{hostname}' 解析到私有/保留地址 '{ip}'")
 
     return url
+
+
+def resolve_pinned_connection(url: str) -> tuple[str, str]:
+    """
+    在 validate_fetch_url 校验通过后调用：独立做一次 DNS 解析并挑一个非私有/保留 IP，
+    把 IP 直接写入连接目标，返回 IP 直连的 URL，供 httpx 发起真实请求时使用，
+    避免 httpx 再次独立解析 DNS（DNS rebinding TOCTOU 缺口，红线10）。
+
+    两次 getaddrinfo（此函数与 validate_fetch_url 各一次）是有意为之：前者只做安全校验，
+    后者的解析结果才是实际发起连接使用的 IP，二者之间不存在“先校验后再用旧结果连接”的
+    时间窗口。
+
+    返回 (IP 直连 URL, 原始主机名)；原始主机名供调用方设置 Host 头与 TLS SNI，
+    以保持虚拟主机与证书校验正确。
+    """
+    parsed = urlparse(url)
+    hostname = parsed.hostname or ""
+    if not hostname:
+        raise InvalidURLError("URL 缺少有效主机名")
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+
+    try:
+        addr_info = socket.getaddrinfo(hostname, port)
+    except socket.gaierror as e:
+        raise SSRFSecurityError(f"DNS 解析失败: {e}")
+
+    safe_ip = next((a[4][0] for a in addr_info if not is_ip_private_or_reserved(a[4][0])), None)
+    if safe_ip is None:
+        raise SSRFSecurityError(f"未找到可安全连接的公网 IP 地址: '{hostname}'")
+
+    netloc = f"[{safe_ip}]" if ":" in safe_ip else safe_ip
+    if parsed.port:
+        netloc = f"{netloc}:{parsed.port}"
+    pinned_url = parsed._replace(netloc=netloc).geturl()
+    return pinned_url, hostname
