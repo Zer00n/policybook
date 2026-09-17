@@ -48,13 +48,13 @@ const currentYear = new Date().getFullYear()
       <i></i>
     </div>
 
-    <!-- 桌面侧栏导航 (>= 1440px) -->
+    <!-- 桌面侧栏导航 (>= 1440px)：76px 纯图标窄栏，图标下方不再显示文字标签，
+         悬停/聚焦显示 title 提示，并用 aria-label 保证可访问名称 -->
     <aside class="sidebar glass desktop-only">
-      <div class="brand">
+      <div class="brand" title="保单簿">
         <div class="brand-icon">
-          <ShieldCheck :size="28" class="brand-svg" />
+          <ShieldCheck :size="24" class="brand-svg" />
         </div>
-        <span class="brand-title">保单簿</span>
       </div>
 
       <nav class="nav-list">
@@ -65,6 +65,7 @@ const currentYear = new Date().getFullYear()
           class="nav-link"
           :class="{ active: route.path === item.path || (item.path !== '/' && route.path.startsWith(item.path)) }"
           :title="item.name"
+          :aria-label="item.name"
         >
           <component :is="item.icon" :size="20" class="nav-icon" />
           <span class="nav-label">{{ item.name }}</span>
@@ -185,16 +186,17 @@ const currentYear = new Date().getFullYear()
   position: relative;
 }
 
-/* 桌面侧栏 (>= 1440px) */
+/* 桌面侧栏 (>= 1440px)：76px 纯图标窄栏，DEV-GUIDE 7.6 */
 .sidebar {
-  width: 220px;
-  min-width: 220px;
+  width: 76px;
+  min-width: 76px;
   height: 100vh;
   position: sticky;
   top: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--sp-4) var(--sp-3);
+  align-items: center;
+  padding: var(--sp-4) var(--sp-2);
   margin: var(--sp-4) 0 var(--sp-4) var(--sp-4);
   height: calc(100vh - var(--sp-8));
   z-index: 20;
@@ -203,8 +205,7 @@ const currentYear = new Date().getFullYear()
 .brand {
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-2) var(--sp-3);
+  justify-content: center;
   margin-bottom: var(--sp-4);
 }
 
@@ -222,28 +223,24 @@ const currentYear = new Date().getFullYear()
   color: var(--ok);
 }
 
-.brand-title {
-  font-size: var(--fs-19);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
 .nav-list {
   flex: 1;
+  width: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--sp-1);
   overflow-y: auto;
 }
 
 .nav-link {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-2) var(--sp-3);
+  justify-content: center;
+  width: 52px;
+  height: 52px;
   border-radius: var(--r-control);
-  font-size: var(--fs-14);
-  font-weight: 500;
   color: var(--text-muted);
   transition: var(--trans-fast);
 }
@@ -259,8 +256,22 @@ const currentYear = new Date().getFullYear()
   font-weight: 600;
 }
 
+/* 桌面窄栏只显示图标，文字标签视觉隐藏但保留可访问性（配合 aria-label/title） */
+.nav-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .sidebar-footer {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: var(--sp-2);
   padding-top: var(--sp-3);
