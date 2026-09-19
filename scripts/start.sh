@@ -27,11 +27,27 @@ fi
 # 3. 检查前端
 RUN_DEV=0
 if command -v pnpm &> /dev/null; then
+    DEPS_OK=1
     if [ ! -d "frontend/node_modules" ]; then
         echo "正在安装前端依赖 (pnpm install)..."
-        (cd frontend && pnpm install)
+        # 安装失败不应直接终止启动：只要有已编译产物，仍可由后端单端口托管前端
+        if ! (cd frontend && pnpm install); then
+            DEPS_OK=0
+            PNPM_VER="$(pnpm --version 2>/dev/null || echo 未知)"
+            echo "【警告】前端依赖安装失败（当前 pnpm 版本：${PNPM_VER}）。"
+        fi
     fi
-    RUN_DEV=1
+
+    if [ $DEPS_OK -eq 1 ]; then
+        RUN_DEV=1
+    elif [ -f "frontend/dist/index.html" ]; then
+        echo "  已检测到前端编译产物，改由后端提供静态服务，开发模式本次跳过。"
+    else
+        echo "  且未找到 frontend/dist 产物，无法提供前端页面。"
+        echo "  请检查上面的 pnpm 报错后重试；也可先在能联网的机器上执行 pnpm build，"
+        echo "  再把 frontend/dist 目录拷贝到本机，由后端单端口托管。"
+        exit 1
+    fi
 elif [ -f "frontend/dist/index.html" ]; then
     echo "检测到前端已编译产物，将由后端提供静态服务。"
 else

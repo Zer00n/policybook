@@ -1,3 +1,10 @@
+# 本项目只有 frontend 一个包，这里并非真正的多包 workspace。
+# 但 pnpm 9 及更早版本把本文件视为 workspace 根标记，缺少 packages 字段会直接报
+# "packages field missing or empty" 而无法安装依赖；pnpm 10 起本文件同时承担配置职责，
+# packages 可省略。为兼容两个版本，显式声明当前目录为唯一包。
+packages:
+  - .
+
 allowBuilds:
   esbuild: true
   vue-demi: true
