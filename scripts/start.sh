@@ -24,6 +24,24 @@ if [ ! -f ".env" ]; then
 fi
 (cd backend && uv run python -m app.scripts.init)
 
+# 2.1 检查 OCR 所需的系统库
+# rapidocr-onnxruntime 依赖完整版 opencv-python，它需要 libGL 等图形库。
+# 服务器版 Linux 通常不预装，缺库时后端会在导入阶段直接崩溃，在这里提前拦下。
+echo "检查 OCR 运行环境..."
+if ! CV_ERR="$(cd backend && uv run python -c "import cv2" 2>&1)"; then
+    echo "【错误】OCR 依赖的 OpenCV 无法加载："
+    echo "$CV_ERR" | tail -3
+    case "$CV_ERR" in
+        *"cannot open shared object file"*|*libGL*|*libgthread*|*libglib*)
+            echo ""
+            echo "这是服务器版 Linux 常见的缺库问题，安装对应系统库后重试："
+            echo "  Debian / Ubuntu :  sudo apt-get update && sudo apt-get install -y libgl1 libglib2.0-0"
+            echo "  RHEL / CentOS   :  sudo yum install -y mesa-libGL glib2"
+            ;;
+    esac
+    exit 1
+fi
+
 # 3. 检查前端
 RUN_DEV=0
 if command -v pnpm &> /dev/null; then
@@ -80,13 +98,33 @@ else
 fi
 
 # 6. 等待服务就绪
+# 必须用健康检查结果决定后续输出：后端崩溃时不能再打印「启动成功」
 echo "等待服务启动..."
+BACKEND_READY=0
 for i in {1..30}; do
     if curl -s http://127.0.0.1:8000/api/health >/dev/null 2>&1; then
+        BACKEND_READY=1
+        break
+    fi
+    # 后端进程已退出就不必再等
+    if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
         break
     fi
     sleep 0.5
 done
+
+if [ $BACKEND_READY -eq 0 ]; then
+    echo ""
+    echo "======================================================="
+    echo "      后端服务未能就绪，启动失败                       "
+    echo "======================================================="
+    echo "  请查看上方后端输出的报错定位原因。常见情况："
+    echo "    - 缺少 OCR 所需系统库（libGL.so.1、libglib 等）"
+    echo "    - 端口 8000 已被占用"
+    echo "    - .env 配置缺失或 APP_SECRET 未生成"
+    echo "======================================================="
+    exit 1
+fi
 
 echo ""
 echo "======================================================="
